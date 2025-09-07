@@ -1,6 +1,6 @@
 {
   "servers": {
-    "cclib-parser": {
+    "parse-patrol": {
       "command": "uv",
       "args": ["run", "python", "src/parse_patrol/main.py"],
       "cwd": "${workspaceFolder}"

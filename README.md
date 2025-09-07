@@ -87,6 +87,10 @@ The following links explain the basics of MCP, including the distinction between
 - Basics
   - Full repo and README of the MCP Python SDK: https://github.com/modelcontextprotocol/python-sdk
   - The FastMCP package docs: https://gofastmcp.com
+- Advanced
+  - JSON-RPC: foundational protocol that formalizes MCP server-client communication. It is transport-layer agnostic: https://www.jsonrpc.org/specification
+- VS Code
+  - detailed MCP server setup and management: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
 - cclib
   - Docs explaining the supported fields and codes: https://cclib.github.io/data.html
   - Repo for in-depth navigation of the code: https://github.com/cclib
