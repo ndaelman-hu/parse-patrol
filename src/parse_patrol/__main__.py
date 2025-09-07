@@ -7,13 +7,13 @@ Collects and exposes all tools from subservers (e.g., cclib, others).
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 # Import subserver modules (each with its own MCP tool definitions)
-import src.cclib.main as cclib_main
-# import src.parsers.other_parser.main as other_main
+import src.cclib.__main__ as cclib_main
 
 mcp = FastMCP("Unified MCP Server")
 
 # Register all subservers' tools
 for subserver in [cclib_main]:  # Add other subservers here
+    print("Tools discovered:", mcp.__dict__.keys())
     for tool in getattr(subserver.mcp, "tools", []):
         mcp.tools.append(tool)
     for resource in getattr(subserver.mcp, "resources", []):

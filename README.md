@@ -49,7 +49,7 @@ Then activate the virtual environment via `. .venv/bin/activate`.You can now ini
 parse-patrol/
 ├── src/
 │   ├── parse_patrol/             # Unified MCP server entrypoint, collects all subservers
-│   ├── parsers/                  # Parsing tools with their own MCP server in `main.py`
+│   ├── parsers/                  # Parsing tools with their own MCP server in `__main__.py`
 │   ├── pipelines/                # Scripts for generating parsing pipelines
 │   │   ├── agent_generated/      # Agent-produced pipeline scripts
 │   │   ├── examples/             # Example pipeline scripts
@@ -67,7 +67,7 @@ parse-patrol/
 
 ## Development
 
-Develop servers for each tool individually. Each tool has its own dedicated folder under `src/parsers/`. Define their MCP servers in `main.py`.
+Develop servers for each tool individually. Each tool has its own dedicated folder under `src/parsers/`. Define their MCP servers in `__main__.py`.
 
 For testing of a new server, add it to IDE as outlined above.
 Once the servers passes the checks, register the new MCP server:

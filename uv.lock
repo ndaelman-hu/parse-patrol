@@ -288,6 +288,7 @@ source = { editable = "." }
 dependencies = [
     { name = "cclib" },
     { name = "mcp", extra = ["cli"] },
+    { name = "pydantic" },
 ]
 
 [[distribution]]

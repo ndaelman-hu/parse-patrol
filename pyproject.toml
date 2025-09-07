@@ -7,7 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "cclib>=1.8.1",
     "mcp[cli]>=1.13.1",
+    "pydantic>=2.11.7",
 ]
+
+
+[tool.hatch.build]
+packages = ["src"]
 
 [build-system]
 requires = ["hatchling"]
