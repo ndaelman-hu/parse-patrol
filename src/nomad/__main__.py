@@ -83,11 +83,9 @@ def search_nomad_entries(
         raise Exception(f"Failed to query NOMAD API: {str(e)}")
 
 
-@mcp.resource("nomad://{entry_id}")
+@mcp.tool()
 def get_nomad_raw_files(entry_id: str) -> str:
     """Download and extract NOMAD raw files to .data directory.
-    
-    URI format: nomad://entry_id
     
     Args:
         entry_id: NOMAD entry ID
