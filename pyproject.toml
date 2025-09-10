@@ -8,6 +8,7 @@ dependencies = [
     "cclib>=1.8.1",
     "mcp[cli]>=1.13.1",
     "pydantic>=2.11.7",
+    "pinecone[asyncio]>=7.3.0"
 ]
 
 
