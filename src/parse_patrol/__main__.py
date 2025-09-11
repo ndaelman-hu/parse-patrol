@@ -101,6 +101,7 @@ def parse_patrol_parser_pipeline_prompt(
     Preferred Tools: {preferred_tools}
 
     Please follow the structured parsing pipeline to extract the required information, summarize key chemical properties, and write the pipeline into a code file in the `pipelines` folder in the root of the repository.
+    Check what other tools are available in the parse-patrol toolkit and use them if needed.
     """
 
 
