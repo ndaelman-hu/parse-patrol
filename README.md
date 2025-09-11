@@ -50,12 +50,12 @@ parse-patrol/
 ├── src/
 │   ├── parse_patrol/             # Unified MCP server entrypoint, collects all subservers
 │   ├── parsers/                  # Parsing tools with their own MCP server in `__main__.py`
-│   ├── pipelines/                # Scripts for generating parsing pipelines
-│   │   ├── agent_generated/      # Agent-produced pipeline scripts
-│   │   ├── examples/             # Example pipeline scripts
-│   │   └── data/                 # Data files to parse by agent
 │   └── utils/                    # Shared utilities/helpers
 ├── scripts/                      # (Currently empty) CLI tools, setup scripts, etc.
+├── pipelines/                # Scripts for generating parsing pipelines
+│   ├── agent_generated/      # Agent-produced pipeline scripts
+│   ├── examples/             # Example pipeline scripts
+└── .data/                 # Data files downloaded by nomad MCP, to parse by the agent
 ├── pyproject.toml
 ├── README.md
 ├── LICENSE
