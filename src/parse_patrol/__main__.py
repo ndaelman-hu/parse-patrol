@@ -23,5 +23,35 @@ for subserver in [cclib_main, nomad_main, custom_gaussian_main]:  # Add other su
     for prompt in getattr(subserver.mcp, "prompts", []):
         mcp.prompts.append(prompt)
 
+@mcp.prompt()
+def parse_patrol_assistant_prompt(
+    task_description: str,
+    preferred_tools: str = "any available parsers"
+) -> str:
+    """Generate an open-ended prompt for comprehensive chemistry file analysis.
+    
+    Args:
+        task_description: Description of the computational chemistry task
+        preferred_tools: Preferred parsing tools (default: any available parsers)
+    
+    Returns:
+        Formatted prompt string for comprehensive analysis
+    """
+    return f"""Help me with this computational chemistry task: {task_description}
+
+Use {preferred_tools} from the parse-patrol toolkit to:
+
+1. **Data Discovery**: Search for relevant computational data using NOMAD if needed
+2. **File Parsing**: Use appropriate parsers (cclib, custom_gaussian) for the file types
+3. **Analysis**: Extract and interpret key chemical properties like:
+   - Molecular geometries and structures
+   - Electronic properties (energies, orbitals, charges)
+   - Vibrational properties (frequencies, thermochemistry)
+   - Optimization/transition state information
+4. **Integration**: Combine data from multiple sources if applicable
+
+Provide insights and recommendations based on the parsed data."""
+
+
 if __name__ == "__main__":
     mcp.run()
