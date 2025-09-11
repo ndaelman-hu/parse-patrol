@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 
 
 class CCDataModel(BaseModel):
+    class Config:
+        # Prevent model registration conflicts when imported multiple times
+        validate_assignment = True
     aonames: Optional[List[str]] = Field(None, description="Atomic orbital names (list of strings)")
     aooverlaps: Optional[List] = Field(None, description="Atomic orbital overlap matrix (array of rank 2)")
     atombasis: Optional[List[List[int]]] = Field(None, description="Indices of atomic orbitals on each atom (list of lists)")
@@ -126,4 +129,15 @@ def parse_file_to_model(filepath: str) -> CCDataModel:
     return ccdata_to_model(ccdata)
 
 
-mcp.run()
+@mcp.prompt()
+def cclib_test_prompt(
+    file_description: str,
+    output_format: str="a CCDataModel for JSON serialization"
+) -> str:
+    return f"""Use `cclib.__main__.`parse_file_to_model`
+to parse the file with description {file_description}
+and return the data as {output_format}."""
+
+
+if __name__ == "__main__":
+    mcp.run()
