@@ -36,6 +36,36 @@ class NOMADEntry(BaseModel):
     program_version: Optional[str] = Field(None, description="Version of the computational program")
 
 
+def _parse_date_to_timestamp(date_str: str, end_of_day: bool = False) -> Optional[int]:
+    """Parse date string to Unix timestamp in milliseconds.
+    
+    Args:
+        date_str: Date string in various formats
+        end_of_day: If True and date is date-only, set to end of day (23:59:59)
+    
+    Returns:
+        Unix timestamp in milliseconds, or None if parsing fails
+    """
+    try:
+        # Try "MM/DD/YYYY HH:MM" format first
+        parsed_date = datetime.strptime(date_str, "%m/%d/%Y %H:%M")
+    except ValueError:
+        try:
+            # Try ISO format
+            parsed_date = datetime.fromisoformat(date_str)
+        except ValueError:
+            try:
+                # Try date only
+                parsed_date = datetime.strptime(date_str, "%Y-%m-%d")
+                if end_of_day:
+                    parsed_date = parsed_date.replace(hour=23, minute=59, second=59)
+            except ValueError:
+                return None
+    
+    # Convert to Unix timestamp in milliseconds
+    return int(parsed_date.timestamp() * 1000)
+
+
 mcp = FastMCP("NOMAD Central Materials Database")
 
 
@@ -96,44 +126,16 @@ def search_nomad_entries(
     date_filter = {}
     
     if date_from:
-        try:
-            # Try multiple date formats
-            try:
-                # Try "MM/DD/YYYY HH:MM" format first
-                parsed_date = datetime.strptime(date_from, "%m/%d/%Y %H:%M")
-            except ValueError:
-                try:
-                    # Try ISO format
-                    parsed_date = datetime.fromisoformat(date_from)
-                except ValueError:
-                    # Try date only
-                    parsed_date = datetime.strptime(date_from, "%Y-%m-%d")
-            
-            # Convert to Unix timestamp in milliseconds
-            timestamp_ms = int(parsed_date.timestamp() * 1000)
-            date_filter["gte"] = timestamp_ms
-        except ValueError:
-            pass  # Skip invalid date format
+        timestamp_ms = _parse_date_to_timestamp(date_from)
+        if timestamp_ms is None:
+            raise ValueError(f"Invalid date_from format: '{date_from}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-01-01T10:30:00', '2024-01-01'")
+        date_filter["gte"] = timestamp_ms
     
     if date_to:
-        try:
-            # Try multiple date formats
-            try:
-                # Try "MM/DD/YYYY HH:MM" format first
-                parsed_date = datetime.strptime(date_to, "%m/%d/%Y %H:%M")
-            except ValueError:
-                try:
-                    # Try ISO format
-                    parsed_date = datetime.fromisoformat(date_to)
-                except ValueError:
-                    # Try date only (add end of day)
-                    parsed_date = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
-            
-            # Convert to Unix timestamp in milliseconds
-            timestamp_ms = int(parsed_date.timestamp() * 1000)
-            date_filter["lte"] = timestamp_ms
-        except ValueError:
-            pass  # Skip invalid date format
+        timestamp_ms = _parse_date_to_timestamp(date_to, end_of_day=True)
+        if timestamp_ms is None:
+            raise ValueError(f"Invalid date_to format: '{date_to}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-12-31T23:59:59', '2024-12-31'")
+        date_filter["lte"] = timestamp_ms
     
     # Add the date filter to query if any dates were provided
     if date_filter:
