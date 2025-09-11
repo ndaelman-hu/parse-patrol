@@ -293,7 +293,11 @@ def _parse_gjf(path: Path) -> GaussianDataModel:
         i += 1
 
     # Geometry block until blank line or section break
-    periodic = set(["Tv", "Tv1", "Tv2", "Tv3"])  # ignore lattice vectors
+    # Configurable or extensible set of lattice vector identifiers to ignore in geometry
+    # Gaussian may use "Tv", "Tv1", "Tv2", "Tv3", "Tv4", etc. for lattice vectors in periodic jobs.
+    # You can extend this list as needed.
+    lattice_vector_prefixes = ("Tv", "Tv1", "Tv2", "Tv3", "Tv4", "Tv5", "Tv6")
+    periodic = set(lattice_vector_prefixes)
     # Use periodictable for comprehensive element mapping
     try:
         element_to_Z = {el.symbol: el.number for el in periodictable.elements if el.number}
