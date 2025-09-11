@@ -351,8 +351,8 @@ def _parse_fchk(path: Path) -> GaussianDataModel:
     coords: List[float] = []
 
     def read_block(start_idx: int) -> Tuple[int, List[str]]:
-        # Reads subsequent lines until next header (heuristic: next line containing '  ' then a label ending with  '  '?)
-        # Instead, just read until we hit a line that looks like a labeled key: "<Label>  <Type>  <Count>"
+        # Reads subsequent lines until a line matching the header regex is found:
+        # i.e., a line that looks like "<Label>  <Type>  <Count>" (e.g., "Atomic numbers           I   N=Natom")
         vals: List[str] = []
         i = start_idx
         header_re = re.compile(r"^[A-Za-z].*\s+[IRL]\s+\d+")
