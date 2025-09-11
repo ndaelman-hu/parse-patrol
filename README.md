@@ -64,7 +64,7 @@ parse-patrol/
 
 ## Usage
 
-- **VS Code**: A central access server with all functional tools is registered under `.vscode/mcp.json` (copy from `.vscode/mcp.template.json`). It can be run from this file in the IDE, or found under the extensions the (`Ctrl+Shift+X` on Ubuntu). Once the server is started, it will be available to the `Agent` mode in co-pilot `CHAT`.
+- **VS Code**: A central access server with all functional tools is registered under `.vscode/mcp.json` (copy from `.vscode/mcp.template.json`). It can be run from this file in the IDE, or found under the extensions the (`Ctrl+Shift+X` on Ubuntu). Once the server is started, it will be available to the `Agent` mode in co-pilot `CHAT` (make sure to switch your co-pilot from `Ask/Edit` to `Agent` mode!!!).
 
 There are now various prompts available. Type slash (`/`) in the chat window and wait for auto-complete.
 All prompts should show under `/mcp.parse-patrol.<prompt path>`. Note that the MCP server name may change when published under a different or multiple servers.
