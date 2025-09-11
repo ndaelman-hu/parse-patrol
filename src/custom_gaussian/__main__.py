@@ -53,13 +53,13 @@ _re_temperature = re.compile(r"Temperature\s+(" + _float_re + r")")
 _re_freqs = re.compile(r"Frequencies --\s*(.*)")
 _re_ir = re.compile(r"IR Inten\s+--\s*(.*)")
 _re_redmasses = re.compile(r"Red\.?\s*masses\s+--\s*(.*)", re.IGNORECASE)
+_re_header = re.compile(r"^[A-Za-z].*\s+[IRL]\s+\d+")
 
 # Standard orientation block headers in Gaussian logs
 _re_std_orient_header = re.compile(r"^\s*Standard orientation:\s*$")
 _re_orient_divider = re.compile(r"^\s*-{2,}\s*$")
 # Columns: Center  Atomic  Atomic  Coordinates (Angstroms)
 #          Number  Number   Type      X           Y           Z
-
 
 def _safe_float(s: str) -> float:
     # Gaussian sometimes uses D for exponent
@@ -365,22 +365,15 @@ def _parse_fchk(path: Path) -> CustomGaussianDataModel:
             Tuple[int, List[str]]: A tuple containing the index of the next header line and a list of string values collected from the block.
 
         Notes:
-            The function uses a regular expression to detect FCHK file headers, which are lines that typically start with a label, followed by whitespace, a type indicator ('I', 'R', or 'L'), and a count (e.g., "Atomic numbers           I   N=Natom").
-            The regex pattern used is: ^[A-Za-z].*\\s+[IRL]\\s+\\d+
-            - ^[A-Za-z] : Line starts with a letter (header label)
-            - .*\\s+     : Followed by any characters and at least one whitespace
-            - [IRL]     : Followed by a single character indicating type (I: integer, R: real, L: logical)
-            - \\s+       : At least one whitespace
-            - \\d+       : One or more digits (count)
-            Consider moving this regex to the module level for consistency with other patterns.
+            The function uses a regular expression to detect FCHK file headers (via `_re_header`).
         """
         # Reads subsequent lines until a line matching the header regex is found:
         # i.e., a line that looks like "<Label>  <Type>  <Count>" (e.g., "Atomic numbers           I   N=Natom")
         vals: List[str] = []
         i = start_idx
-        header_re = re.compile(r"^[A-Za-z].*\s+[IRL]\s+\d+")
+
         while i < len(lines):
-            if header_re.match(lines[i]):
+            if _re_header.match(lines[i]):
                 break
             vals.extend(lines[i].split())
             i += 1
