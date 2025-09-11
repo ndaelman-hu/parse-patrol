@@ -102,6 +102,10 @@ def parse_patrol_parser_pipeline_prompt(
 
     Please follow the structured parsing pipeline to extract the required information, summarize key chemical properties, and write the pipeline into a code file in the `pipelines` folder in the root of the repository.
     Check what other tools are available in the parse-patrol toolkit and use them if needed.
+    Make sure to include error handling for unsupported file types or parsing issues.
+    The pipeline should be modular and reusable for similar parsing tasks in the future.
+    Make sure that all the imports are correct.
+    Provide the complete code for the pipeline.
     """
 
 
