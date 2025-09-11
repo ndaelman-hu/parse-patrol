@@ -18,7 +18,7 @@ This means introducing _redundancy in tooling_, so the agent can choose and test
 Currently available:
 
 - cclib
-- gaussian
+- custom_gaussian
 
 Planned:
 

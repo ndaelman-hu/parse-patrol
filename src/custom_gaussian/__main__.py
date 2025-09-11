@@ -7,7 +7,7 @@ import periodictable
 from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
 
 
-class GaussianDataModel(BaseModel):
+class CustomGaussianDataModel(BaseModel):
     # Common job info
     route: Optional[str] = Field(None, description="Gaussian route section (from .gjf or inferred)")
     title: Optional[str] = Field(None, description="Title section (from .gjf if present)")
@@ -38,7 +38,7 @@ class GaussianDataModel(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-mcp = FastMCP("Gaussian Parser")
+mcp = FastMCP("Custom Gaussian Parser")
 
 
 _float_re = r"[-+]?\d+(?:\.\d*)?(?:[DEde][+-]?\d+)?"
@@ -121,7 +121,7 @@ def _parse_last_standard_orientation(lines: List[str]) -> Tuple[Optional[List[in
     return atomnos, coords
 
 
-def _parse_log_or_out(path: Path) -> GaussianDataModel:
+def _parse_log_or_out(path: Path) -> CustomGaussianDataModel:
     text = path.read_text(encoding="utf-8", errors="ignore").splitlines()
 
     charge: Optional[int] = None
@@ -219,7 +219,7 @@ def _parse_log_or_out(path: Path) -> GaussianDataModel:
     atomnos, coords = _parse_last_standard_orientation(text)
     natom = len(atomnos) if atomnos else None
 
-    return GaussianDataModel(
+    return CustomGaussianDataModel(
         charge=charge,
         mult=mult,
         natom=natom,
@@ -240,7 +240,7 @@ def _parse_log_or_out(path: Path) -> GaussianDataModel:
     )
 
 
-def _parse_gjf(path: Path) -> GaussianDataModel:
+def _parse_gjf(path: Path) -> CustomGaussianDataModel:
     lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
 
     # Gaussian input format:
@@ -332,7 +332,7 @@ def _parse_gjf(path: Path) -> GaussianDataModel:
     natom = len(atomnos) if atomnos else None
     route = " ".join(route_lines) if route_lines else None
 
-    return GaussianDataModel(
+    return CustomGaussianDataModel(
         route=route,
         title=title,
         charge=charge,
@@ -344,7 +344,7 @@ def _parse_gjf(path: Path) -> GaussianDataModel:
     )
 
 
-def _parse_fchk(path: Path) -> GaussianDataModel:
+def _parse_fchk(path: Path) -> CustomGaussianDataModel:
     # Minimal extraction: atomic numbers and coordinates if present.
     # Note: Formatted checkpoint keys:
     #  - Atomic numbers: "Atomic numbers"
@@ -415,7 +415,7 @@ def _parse_fchk(path: Path) -> GaussianDataModel:
     if natom and len(coords) >= 3 * natom:
         coord_triplets = [coords[j:j+3] for j in range(0, 3 * natom, 3)]
 
-    return GaussianDataModel(
+    return CustomGaussianDataModel(
         natom=natom,
         atomnos=atomnos or None,
         atomcoords=coord_triplets or None,
@@ -424,9 +424,9 @@ def _parse_fchk(path: Path) -> GaussianDataModel:
 
 
 @mcp.tool()
-def gauss_parse_file_to_model(filepath: str) -> GaussianDataModel:
+def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
     """
-    Parse a Gaussian file (.log/.out, .gjf/.com, .fchk) and return a GaussianDataModel.
+    Parse a Gaussian file (.log/.out, .gjf/.com, .fchk) and return a CustomGaussianDataModel.
 
     - .log/.out: Extracts charge/multiplicity, last geometry, SCF energies, basic thermochemistry, vibrational frequencies/IR.
     - .gjf/.com: Extracts route, title, charge/multiplicity, and geometry.
@@ -437,11 +437,11 @@ def gauss_parse_file_to_model(filepath: str) -> GaussianDataModel:
         filepath: Path to Gaussian file.
 
     Returns:
-        GaussianDataModel with parsed contents.
+        CustomGaussianDataModel with parsed contents.
     """
     path = Path(filepath)
     if not path.exists():
-        return GaussianDataModel(metadata={"error": f"File not found: {filepath}"})
+        return CustomGaussianDataModel(metadata={"error": f"File not found: {filepath}"})
 
     ext = path.suffix.lower()
 
@@ -455,14 +455,14 @@ def gauss_parse_file_to_model(filepath: str) -> GaussianDataModel:
         return _parse_fchk(path)
 
     if ext == ".chk":
-        return GaussianDataModel(
+        return CustomGaussianDataModel(
             metadata={
                 "source": str(path),
                 "warning": "Binary .chk not supported. Convert to .fchk using: formchk input.chk output.fchk"
             }
         )
 
-    return GaussianDataModel(metadata={"source": str(path), "warning": f"Unrecognized extension: {ext}"})
+    return CustomGaussianDataModel(metadata={"source": str(path), "warning": f"Unrecognized extension: {ext}"})
 
 
 mcp.run()
