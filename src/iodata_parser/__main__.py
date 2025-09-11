@@ -10,8 +10,8 @@ class IODataCubeModel(BaseModel):
     """The volumetric data from a cube (or similar) file."""
 
     origin: List[float] = Field(description="A 3D vector with the origin of the axes frame.")
-    axes: List[List[float]] = Field(descripton="A (3, 3) array where each row represents the spacing between two neighboring grid points along the first, second and third axis, respectively.")
-    data: List[List[List[float]]] = Field(descripton="A (K, L, M) array of data on a uniform grid.")
+    axes: List[List[float]] = Field(description="A (3, 3) array where each row represents the spacing between two neighboring grid points along the first, second and third axis, respectively.")
+    data: List[List[List[float]]] = Field(description="A (K, L, M) array of data on a uniform grid.")
     shape: List[int] = Field(description="Shape of the rectangular grid.")
 
 class IODataModel(BaseModel):
@@ -23,7 +23,7 @@ class IODataModel(BaseModel):
     atffparams: Optional[dict] = Field(None, description="A dictionary with arrays of atomic force field parameters (typically non-bonded). Keys include 'charges', 'vdw_radii', 'sigmas', 'epsilons', 'alphas' (atomic polarizabilities), 'c6s', 'c8s', 'c10s', 'buck_as', 'buck_bs', 'lj_as', 'core_charges', 'valence_charges', 'valence_widths', etc. Not all of them have to be present, depending on the use case.")
     atfrozen: Optional[List[bool]] = Field(None, description="A (N,) bool array with frozen atoms. (All atoms are free if this attribute is not set.)")
     atgradient: Optional[List[List[float]]] = Field(None, description="A (N, 3) float array with the first derivatives of the energy w.r.t. Cartesian atomic displacements.")
-    athessian: Optional[List[List[float]]] = Field(None, description= "A (3*N, 3*N) array containing the energy Hessian w.r.t Cartesian atomic displacements.")
+    athessian: Optional[List[List[float]]] = Field(None, description="A (3*N, 3*N) array containing the energy Hessian w.r.t Cartesian atomic displacements.")
     atmasses: Optional[List[float]] = Field(None, description="A (N,) float array with atomic masses.")
     atnums: Optional[List[int]] = Field(None, description="A (N,) int vector with the atomic numbers.")
     basisdef: Optional[str] = Field(None, description="A basis set definition, i.e. a dictionary whose keys are symbols (of chemical elements), atomic numbers (similar to previous, str to make distinction with following) or an atom index (integer referring to a specific atom in a molecule). The format of the values is to be decided when implementing a load function for basis set definitions.")
