@@ -301,7 +301,7 @@ def _parse_gjf(path: Path) -> CustomGaussianDataModel:
     # Use periodictable for comprehensive element mapping
     try:
         element_to_Z = {el.symbol: el.number for el in periodictable.elements if el.number}
-    except ImportError:
+    except Exception:
         # Fallback minimal mapping if periodictable is not installed
         element_to_Z: Dict[str, int] = {
             "H": 1, "He": 2,
