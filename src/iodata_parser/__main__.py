@@ -52,10 +52,10 @@ class IODataModel(BaseModel):
 
 
 def iodata_to_model(ext_data: iodata_package.IOData) -> IODataModel:
-    """Convert IOData object to IODataObject (Pydantic) format.
+    """Convert IOData object to IODataModel (Pydantic) format.
     
     Args:
-        iodata: Parsed iodata object from IOData
+        ext_data: Parsed iodata object from IOData
     
     Returns:
         IODataModel with converted data types for JSON serialization
