@@ -355,6 +355,25 @@ def _parse_fchk(path: Path) -> GaussianDataModel:
     coords: List[float] = []
 
     def read_block(start_idx: int) -> Tuple[int, List[str]]:
+        """
+        Reads a block of lines from the input, starting at the given index, until a line matching the FCHK file header pattern is encountered.
+
+        Args:
+            start_idx (int): The index in the lines list to start reading from.
+
+        Returns:
+            Tuple[int, List[str]]: A tuple containing the index of the next header line and a list of string values collected from the block.
+
+        Notes:
+            The function uses a regular expression to detect FCHK file headers, which are lines that typically start with a label, followed by whitespace, a type indicator ('I', 'R', or 'L'), and a count (e.g., "Atomic numbers           I   N=Natom").
+            The regex pattern used is: ^[A-Za-z].*\s+[IRL]\s+\d+
+            - ^[A-Za-z] : Line starts with a letter (header label)
+            - .*\s+     : Followed by any characters and at least one whitespace
+            - [IRL]     : Followed by a single character indicating type (I: integer, R: real, L: logical)
+            - \s+       : At least one whitespace
+            - \d+       : One or more digits (count)
+            Consider moving this regex to the module level for consistency with other patterns.
+        """
         # Reads subsequent lines until a line matching the header regex is found:
         # i.e., a line that looks like "<Label>  <Type>  <Count>" (e.g., "Atomic numbers           I   N=Natom")
         vals: List[str] = []
