@@ -6,22 +6,30 @@ Collects and exposes all tools from subservers (e.g., cclib, others).
 
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
-# Import subserver modules (each with its own MCP tool definitions)
+mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
+
+# Import subserver modules to trigger their tool/prompt definitions
+# but access them through their function references, not mcp instances
 import src.cclib.__main__ as cclib_main
-import src.nomad.__main__ as nomad_main
+import src.nomad.__main__ as nomad_main  
 import src.custom_gaussian.__main__ as custom_gaussian_main
 
-mcp = FastMCP("Unified MCP Server")
+# Register tools and prompts directly from the imported functions
+# This avoids FastMCP instance conflicts
 
-# Register all subservers' tools
-for subserver in [cclib_main, nomad_main, custom_gaussian_main]:  # Add other subservers here
-    print("Tools discovered:", mcp.__dict__.keys())
-    for tool in getattr(subserver.mcp, "tools", []):
-        mcp.tools.append(tool)
-    for resource in getattr(subserver.mcp, "resources", []):
-        mcp.resources.append(resource)
-    for prompt in getattr(subserver.mcp, "prompts", []):
-        mcp.prompts.append(prompt)
+# Register cclib tools and prompts
+mcp.tool()(cclib_main.cclib_parse_file_to_model)
+mcp.prompt()(cclib_main.cclib_test_prompt)
+
+# Register NOMAD tools and prompts
+mcp.tool()(nomad_main.search_nomad_entries)
+mcp.tool()(nomad_main.get_nomad_raw_files)
+mcp.tool()(nomad_main.get_nomad_archive)
+mcp.prompt()(nomad_main.nomad_materials_prompt)
+
+# Register custom Gaussian tools and prompts
+mcp.tool()(custom_gaussian_main.gauss_parse_file_to_model)
+mcp.prompt()(custom_gaussian_main.custom_gaussian_test_prompt)
 
 @mcp.prompt()
 def parse_patrol_assistant_prompt(

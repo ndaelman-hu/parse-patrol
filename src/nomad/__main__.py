@@ -259,6 +259,7 @@ def nomad_materials_prompt(
     Returns:
         Formatted prompt string for NOMAD operations
     """
+    
     if action == NOMADAction.search:
         return f"""Search the NOMAD materials database for: {search_query}
 
