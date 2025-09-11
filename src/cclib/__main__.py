@@ -110,7 +110,7 @@ mcp = FastMCP("CCLib Chemistry Parser")
 
 
 @mcp.tool()
-def parse_file_to_model(filepath: str) -> CCDataModel:
+def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     """Parse chemistry file and return as CCDataModel for JSON serialization.
     
     Args:
@@ -125,5 +125,5 @@ def parse_file_to_model(filepath: str) -> CCDataModel:
     ccdata.parse()
     return ccdata_to_model(ccdata)
 
-
-mcp.run()
+if __name__ == "__main__":
+    mcp.run()
