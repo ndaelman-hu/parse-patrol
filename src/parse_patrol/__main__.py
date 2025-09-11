@@ -5,10 +5,6 @@ Collects and exposes all tools from subservers.
 """
 
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-from custom_gaussian import gauss_parse_file_to_model
-from iodata_parser import iodata_parse_file_to_model
-from cclib import cclib_parse_file_to_model
-from nomad import search_nomad_entries, get_nomad_raw_files, get_nomad_archive
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
 
@@ -86,7 +82,7 @@ def parse_patrol_assistant_prompt(
 def parse_patrol_parser_pipeline_prompt(
     file_paths: str,
     task_description: str = "Extract and summarize key chemical properties and write the pipeline into a code in a file to the folder `pipelines` in the root of the repository",
-    preferred_tools: str = f"{get_nomad_raw_files.__name__}, {get_nomad_archive.__name__}, {search_nomad_entries.__name__}, {cclib_parse_file_to_model.__name__}, {iodata_parse_file_to_model.__name__}, {gauss_parse_file_to_model.__name__}"
+    preferred_tools: str = "`get_nomad_raw_files`, `get_nomad_archive`, `search_nomad_entries`, `cclib_parse_file_to_model`, `iodata_parse_file_to_model`, `gauss_parse_file_to_model`"
 ) -> str:
     """Generate a prompt for a structured parsing pipeline.
     
