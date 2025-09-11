@@ -4,7 +4,28 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+from datetime import datetime
+
+
+class EntryRange(BaseModel):
+    start: int = Field(..., ge=1, description="Starting entry number (1-based)")
+    end: int = Field(..., ge=1, description="Ending entry number (1-based)")
+    
+    @field_validator('end')
+    @classmethod
+    def end_must_be_greater_than_start(cls, v, info):
+        if info.data.get('start') and v < info.data['start']:
+            raise ValueError('end must be greater than or equal to start')
+        return v
+    
+    @property
+    def limit(self) -> int:
+        return self.end - self.start + 1
+    
+    @property
+    def page_offset(self) -> int:
+        return (self.start - 1) // self.limit
 
 
 class NOMADEntry(BaseModel):
@@ -22,19 +43,28 @@ mcp = FastMCP("NOMAD Central Materials Database")
 def search_nomad_entries(
     formula: Optional[str] = None,
     program_name: Optional[str] = None,
-    limit: int = 10
+    start: int = 1,
+    end: int = 10,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
 ) -> List[NOMADEntry]:
     """Search NOMAD database for materials entries.
     
     Args:
         formula: Chemical formula (e.g., "Si2O4", "C6H6")
         program_name: Computational program (e.g., "Gaussian", "ORCA")
-        limit: Maximum number of entries to return (default: 10)
+        start: Starting entry number (1-based, default: 1)
+        end: Ending entry number (1-based, default: 10)
+        date_from: Start date for upload time filter (ISO format: "2024-01-01")
+        date_to: End date for upload time filter (ISO format: "2024-12-31")
     
     Returns:
         List of NOMADEntry objects matching the search criteria
     """
     base_url = "https://nomad-lab.eu/prod/v1/api/v1/entries/query"
+    
+    # Create entry range from start/end parameters
+    entry_range = EntryRange(start=start, end=end)
     
     # Build query parameters
     query_body = {
@@ -44,7 +74,8 @@ def search_nomad_entries(
         "pagination": {
             "order_by": "upload_create_time",
             "order": "desc",
-            "page_size": limit
+            "page_size": entry_range.limit,
+            "page_offset": entry_range.page_offset
         },
         "required": {
             "exclude": [
@@ -60,6 +91,53 @@ def search_nomad_entries(
         query_body["query"]["results.material.chemical_formula_reduced:any"] = [formula]
     if program_name:
         query_body["query"]["results.method.simulation.program_name:any"] = [program_name]
+    
+    # Add date filters - NOMAD expects Unix timestamps in milliseconds
+    date_filter = {}
+    
+    if date_from:
+        try:
+            # Try multiple date formats
+            try:
+                # Try "MM/DD/YYYY HH:MM" format first
+                parsed_date = datetime.strptime(date_from, "%m/%d/%Y %H:%M")
+            except ValueError:
+                try:
+                    # Try ISO format
+                    parsed_date = datetime.fromisoformat(date_from)
+                except ValueError:
+                    # Try date only
+                    parsed_date = datetime.strptime(date_from, "%Y-%m-%d")
+            
+            # Convert to Unix timestamp in milliseconds
+            timestamp_ms = int(parsed_date.timestamp() * 1000)
+            date_filter["gte"] = timestamp_ms
+        except ValueError:
+            pass  # Skip invalid date format
+    
+    if date_to:
+        try:
+            # Try multiple date formats
+            try:
+                # Try "MM/DD/YYYY HH:MM" format first
+                parsed_date = datetime.strptime(date_to, "%m/%d/%Y %H:%M")
+            except ValueError:
+                try:
+                    # Try ISO format
+                    parsed_date = datetime.fromisoformat(date_to)
+                except ValueError:
+                    # Try date only (add end of day)
+                    parsed_date = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+            
+            # Convert to Unix timestamp in milliseconds
+            timestamp_ms = int(parsed_date.timestamp() * 1000)
+            date_filter["lte"] = timestamp_ms
+        except ValueError:
+            pass  # Skip invalid date format
+    
+    # Add the date filter to query if any dates were provided
+    if date_filter:
+        query_body["query"]["upload_create_time"] = date_filter
     
     try:
         response = requests.post(base_url, json=query_body, timeout=30)
