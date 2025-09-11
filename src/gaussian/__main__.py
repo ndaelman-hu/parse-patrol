@@ -3,6 +3,7 @@ from typing import Optional, Dict, List, Any, Tuple
 import re
 
 from pydantic import BaseModel, Field
+import periodictable
 from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
 
 
@@ -293,17 +294,21 @@ def _parse_gjf(path: Path) -> GaussianDataModel:
 
     # Geometry block until blank line or section break
     periodic = set(["Tv", "Tv1", "Tv2", "Tv3"])  # ignore lattice vectors
-    element_to_Z: Dict[str, int] = {
-        # Minimal mapping; extend as needed
-        "H": 1, "He": 2,
-        "Li": 3, "Be": 4, "B": 5, "C": 6, "N": 7, "O": 8, "F": 9, "Ne": 10,
-        "Na": 11, "Mg": 12, "Al": 13, "Si": 14, "P": 15, "S": 16, "Cl": 17, "Ar": 18,
-        "K": 19, "Ca": 20, "Sc": 21, "Ti": 22, "V": 23, "Cr": 24, "Mn": 25, "Fe": 26,
-        "Co": 27, "Ni": 28, "Cu": 29, "Zn": 30, "Ga": 31, "Ge": 32, "As": 33, "Se": 34,
-        "Br": 35, "Kr": 36, "Rb": 37, "Sr": 38, "Y": 39, "Zr": 40, "Nb": 41, "Mo": 42,
-        "Tc": 43, "Ru": 44, "Rh": 45, "Pd": 46, "Ag": 47, "Cd": 48, "In": 49, "Sn": 50,
-        "Sb": 51, "Te": 52, "I": 53, "Xe": 54,
-    }
+    # Use periodictable for comprehensive element mapping
+    try:
+        element_to_Z = {el.symbol: el.number for el in periodictable.elements if el.number}
+    except ImportError:
+        # Fallback minimal mapping if periodictable is not installed
+        element_to_Z: Dict[str, int] = {
+            "H": 1, "He": 2,
+            "Li": 3, "Be": 4, "B": 5, "C": 6, "N": 7, "O": 8, "F": 9, "Ne": 10,
+            "Na": 11, "Mg": 12, "Al": 13, "Si": 14, "P": 15, "S": 16, "Cl": 17, "Ar": 18,
+            "K": 19, "Ca": 20, "Sc": 21, "Ti": 22, "V": 23, "Cr": 24, "Mn": 25, "Fe": 26,
+            "Co": 27, "Ni": 28, "Cu": 29, "Zn": 30, "Ga": 31, "Ge": 32, "As": 33, "Se": 34,
+            "Br": 35, "Kr": 36, "Rb": 37, "Sr": 38, "Y": 39, "Zr": 40, "Nb": 41, "Mo": 42,
+            "Tc": 43, "Ru": 44, "Rh": 45, "Pd": 46, "Ag": 47, "Cd": 48, "In": 49, "Sn": 50,
+            "Sb": 51, "Te": 52, "I": 53, "Xe": 54,
+        }
 
     while i < len(lines) and lines[i].strip() != "":
         parts = lines[i].split()
