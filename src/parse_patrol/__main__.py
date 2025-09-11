@@ -60,20 +60,22 @@ def parse_patrol_assistant_prompt(
     Returns:
         Formatted prompt string for comprehensive analysis
     """
-    return f"""Help me with this computational chemistry task: {task_description}
+    return f"""
+    Help me with this computational chemistry task: {task_description}
 
-Use {preferred_tools} from the parse-patrol toolkit to:
+    Use {preferred_tools} from the parse-patrol toolkit to:
 
-1. **Data Discovery**: Search for relevant computational data using NOMAD if needed
-2. **File Parsing**: Use appropriate parsers (cclib, custom_gaussian) for the file types
-3. **Analysis**: Extract and interpret key chemical properties like:
-   - Molecular geometries and structures
-   - Electronic properties (energies, orbitals, charges)
-   - Vibrational properties (frequencies, thermochemistry)
-   - Optimization/transition state information
-4. **Integration**: Combine data from multiple sources if applicable
+    1. **Data Discovery**: Search for relevant computational data using NOMAD if needed
+    2. **File Parsing**: Use appropriate parsers (cclib, custom_gaussian) for the file types
+    3. **Analysis**: Extract and interpret key chemical properties like:
+       - Molecular geometries and structures
+       - Electronic properties (energies, orbitals, charges)
+       - Vibrational properties (frequencies, thermochemistry)
+       - Optimization/transition state information
+    4. **Integration**: Combine data from multiple sources if applicable
 
-Provide insights and recommendations based on the parsed data."""
+    Provide insights and recommendations based on the parsed data.
+    """
 
 
 if __name__ == "__main__":

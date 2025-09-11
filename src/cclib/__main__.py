@@ -144,9 +144,11 @@ def cclib_test_prompt(
         Formatted prompt string for the MCP client
     """
 
-    return f"""Use `cclib.__main__.parse_file_to_model`
-to parse the file with description {file_description}
-and return the data as {output_format}."""
+    return f"""
+    Use `cclib.__main__.parse_file_to_model`
+    to parse the file with description {file_description}
+    and return the data as {output_format}.
+    """
 
 if __name__ == "__main__":
     mcp.run()
