@@ -6,6 +6,13 @@ from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
+from enum import Enum
+
+
+class NOMADAction(str, Enum):
+    search = "search"
+    download = "download"
+    search_and_download = "search_and_download"
 
 
 class EntryRange(BaseModel):
@@ -234,6 +241,56 @@ def get_nomad_archive(entry_id: str, section: Optional[str] = None) -> Dict[str,
         
     except requests.RequestException as e:
         raise Exception(f"Failed to download NOMAD archive for {entry_id}: {str(e)}")
+
+
+@mcp.prompt()
+def nomad_materials_prompt(
+    search_query: str,
+    action: NOMADAction = NOMADAction.search,
+    max_entries: int = 5
+) -> str:
+    """Generate a prompt for NOMAD materials database interactions.
+    
+    Args:
+        search_query: Description of materials/compounds to search for
+        action: Action to perform (search, download, or search_and_download)
+        max_entries: Maximum number of entries to process (default: 5)
+    
+    Returns:
+        Formatted prompt string for NOMAD operations
+    """
+    
+    if action == NOMADAction.search:
+        return f"""
+        Search the NOMAD materials database for: {search_query}
+
+        Use `search_nomad_entries` with appropriate parameters to find up to {max_entries} relevant computational entries. Focus on:
+        - Chemical formula matching
+        - Computational method information  
+        - Program versions and metadata
+        - Recent high-quality calculations
+
+        Return a list of NOMADEntry objects with detailed metadata.
+        """
+    
+    elif action == NOMADAction.download:
+        return f"""
+        Download raw computational files from NOMAD for: {search_query}
+
+        Assuming you have specific entry IDs, use `get_nomad_raw_files` to download the raw computational files to the .data directory. 
+        The files will be extracted and ready for parsing with other tools like cclib or custom_gaussian.
+        """
+    
+    else:  # search_and_download
+        return f"""
+        Search and download materials data from NOMAD for: {search_query}
+
+        1. First use `search_nomad_entries` to find up to {max_entries} relevant entries
+        2. Then use `get_nomad_raw_files` to download the raw files for promising entries
+        3. Files will be available in .data/[entry_id]/ for further analysis
+
+        This comprehensive workflow provides both metadata and raw computational data for analysis.
+        """
 
 
 if __name__ == "__main__":
