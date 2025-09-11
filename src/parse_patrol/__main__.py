@@ -9,11 +9,12 @@ from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 # Import subserver modules (each with its own MCP tool definitions)
 import src.cclib.__main__ as cclib_main
 import src.nomad.__main__ as nomad_main
+import src.gaussian.__main__ as gaussian_main
 
 mcp = FastMCP("Unified MCP Server")
 
 # Register all subservers' tools
-for subserver in [cclib_main, nomad_main]:  # Add other subservers here
+for subserver in [cclib_main, nomad_main, gaussian_main]:  # Add other subservers here
     print("Tools discovered:", mcp.__dict__.keys())
     for tool in getattr(subserver.mcp, "tools", []):
         mcp.tools.append(tool)
