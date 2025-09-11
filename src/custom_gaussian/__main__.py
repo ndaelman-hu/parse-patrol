@@ -366,12 +366,12 @@ def _parse_fchk(path: Path) -> CustomGaussianDataModel:
 
         Notes:
             The function uses a regular expression to detect FCHK file headers, which are lines that typically start with a label, followed by whitespace, a type indicator ('I', 'R', or 'L'), and a count (e.g., "Atomic numbers           I   N=Natom").
-            The regex pattern used is: ^[A-Za-z].*\s+[IRL]\s+\d+
+            The regex pattern used is: ^[A-Za-z].*\\s+[IRL]\\s+\\d+
             - ^[A-Za-z] : Line starts with a letter (header label)
-            - .*\s+     : Followed by any characters and at least one whitespace
+            - .*\\s+     : Followed by any characters and at least one whitespace
             - [IRL]     : Followed by a single character indicating type (I: integer, R: real, L: logical)
-            - \s+       : At least one whitespace
-            - \d+       : One or more digits (count)
+            - \\s+       : At least one whitespace
+            - \\d+       : One or more digits (count)
             Consider moving this regex to the module level for consistency with other patterns.
         """
         # Reads subsequent lines until a line matching the header regex is found:
