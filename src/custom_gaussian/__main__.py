@@ -472,15 +472,17 @@ def custom_gaussian_test_prompt(
     Returns:
         Formatted prompt string for the MCP client
     """
-    return f"""Use `gauss_parse_file_to_model` to parse the Gaussian file: {file_description}
+    return f"""
+    Use `gauss_parse_file_to_model` to parse the Gaussian file: {file_description}
 
-Perform {analysis_type} on the parsed data, focusing on:
-- Molecular geometry and atomic coordinates
-- SCF energies and convergence
-- Vibrational frequencies and thermochemistry
-- Any optimization or transition state information
+    Perform {analysis_type} on the parsed data, focusing on:
+    - Molecular geometry and atomic coordinates
+    - SCF energies and convergence
+    - Vibrational frequencies and thermochemistry
+    - Any optimization or transition state information
 
-Return the data as a CustomGaussianDataModel with detailed analysis."""
+    Return the data as a CustomGaussianDataModel with detailed analysis.
+    """
 
 
 if __name__ == "__main__":

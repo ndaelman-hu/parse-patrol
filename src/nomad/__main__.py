@@ -261,30 +261,36 @@ def nomad_materials_prompt(
     """
     
     if action == NOMADAction.search:
-        return f"""Search the NOMAD materials database for: {search_query}
+        return f"""
+        Search the NOMAD materials database for: {search_query}
 
-Use `search_nomad_entries` with appropriate parameters to find up to {max_entries} relevant computational entries. Focus on:
-- Chemical formula matching
-- Computational method information  
-- Program versions and metadata
-- Recent high-quality calculations
+        Use `search_nomad_entries` with appropriate parameters to find up to {max_entries} relevant computational entries. Focus on:
+        - Chemical formula matching
+        - Computational method information  
+        - Program versions and metadata
+        - Recent high-quality calculations
 
-Return a list of NOMADEntry objects with detailed metadata."""
+        Return a list of NOMADEntry objects with detailed metadata.
+        """
     
     elif action == NOMADAction.download:
-        return f"""Download raw computational files from NOMAD for: {search_query}
+        return f"""
+        Download raw computational files from NOMAD for: {search_query}
 
-Assuming you have specific entry IDs, use `get_nomad_raw_files` to download the raw computational files to the .data directory. The files will be extracted and ready for parsing with other tools like cclib or custom_gaussian."""
+        Assuming you have specific entry IDs, use `get_nomad_raw_files` to download the raw computational files to the .data directory. 
+        The files will be extracted and ready for parsing with other tools like cclib or custom_gaussian.
+        """
     
     else:  # search_and_download
-        return f"""Search and download materials data from NOMAD for: {search_query}
+        return f"""
+        Search and download materials data from NOMAD for: {search_query}
 
-1. First use `search_nomad_entries` to find up to {max_entries} relevant entries
-2. Then use `get_nomad_raw_files` to download the raw files for promising entries
-3. Files will be available in .data/[entry_id]/ for further analysis
-4. Consider using parsing tools (cclib, custom_gaussian) on the downloaded files
+        1. First use `search_nomad_entries` to find up to {max_entries} relevant entries
+        2. Then use `get_nomad_raw_files` to download the raw files for promising entries
+        3. Files will be available in .data/[entry_id]/ for further analysis
 
-This comprehensive workflow provides both metadata and raw computational data for analysis."""
+        This comprehensive workflow provides both metadata and raw computational data for analysis.
+        """
 
 
 if __name__ == "__main__":
