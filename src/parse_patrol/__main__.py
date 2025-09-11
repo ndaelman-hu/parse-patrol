@@ -1,35 +1,50 @@
 
 """
 Unified MCP server entrypoint for parse-patrol.
-Collects and exposes all tools from subservers (e.g., cclib, others).
+Collects and exposes all tools from subservers.
 """
 
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
 
-# Import subserver modules to trigger their tool/prompt definitions
-# but access them through their function references, not mcp instances
-import src.cclib.__main__ as cclib_main
-import src.nomad.__main__ as nomad_main  
-import src.custom_gaussian.__main__ as custom_gaussian_main
+# Subserver modules to register
+SUBSERVERS = [
+    "src.cclib.__main__",
+    "src.nomad.__main__",
+    "src.custom_gaussian.__main__",
+]
 
-# Register tools and prompts directly from the imported functions
-# This avoids FastMCP instance conflicts
+# Tool and prompt function names to register from each module
+REGISTRY = {
+    "src.cclib.__main__": {
+        "tools": ["cclib_parse_file_to_model"],
+        "prompts": ["cclib_test_prompt"]
+    },
+    "src.nomad.__main__": {
+        "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
+        "prompts": ["nomad_materials_prompt"]
+    },
+    "src.custom_gaussian.__main__": {
+        "tools": ["gauss_parse_file_to_model"],
+        "prompts": ["custom_gaussian_test_prompt"]
+    },
+}
 
-# Register cclib tools and prompts
-mcp.tool()(cclib_main.cclib_parse_file_to_model)
-mcp.prompt()(cclib_main.cclib_test_prompt)
-
-# Register NOMAD tools and prompts
-mcp.tool()(nomad_main.search_nomad_entries)
-mcp.tool()(nomad_main.get_nomad_raw_files)
-mcp.tool()(nomad_main.get_nomad_archive)
-mcp.prompt()(nomad_main.nomad_materials_prompt)
-
-# Register custom Gaussian tools and prompts
-mcp.tool()(custom_gaussian_main.gauss_parse_file_to_model)
-mcp.prompt()(custom_gaussian_main.custom_gaussian_test_prompt)
+# Import and register all subserver functions
+import importlib
+for module_name in SUBSERVERS:
+    module = importlib.import_module(module_name)
+    
+    # Register tools
+    for tool_name in REGISTRY[module_name]["tools"]:
+        tool_func = getattr(module, tool_name)
+        mcp.tool()(tool_func)
+    
+    # Register prompts  
+    for prompt_name in REGISTRY[module_name]["prompts"]:
+        prompt_func = getattr(module, prompt_name)
+        mcp.prompt()(prompt_func)
 
 @mcp.prompt()
 def parse_patrol_assistant_prompt(
