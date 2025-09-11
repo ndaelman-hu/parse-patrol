@@ -424,7 +424,7 @@ def _parse_fchk(path: Path) -> GaussianDataModel:
 
 
 @mcp.tool()
-def parse_file_to_model(filepath: str) -> GaussianDataModel:
+def gauss_parse_file_to_model(filepath: str) -> GaussianDataModel:
     """
     Parse a Gaussian file (.log/.out, .gjf/.com, .fchk) and return a GaussianDataModel.
 
