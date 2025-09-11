@@ -417,7 +417,7 @@ def parse_file_to_model(filepath: str) -> GaussianDataModel:
 
     ext = path.suffix.lower()
 
-    if ext.lower() in {".log", ".out"}:
+    if ext in {".log", ".out"}:
         return _parse_log_or_out(path)
 
     if ext in {".gjf", ".com"}:
