@@ -112,8 +112,8 @@ def _parse_last_standard_orientation(lines: List[str]) -> Tuple[Optional[List[in
                 z = float(parts[5])
                 atomnos.append(an)
                 coords.append([x, y, z])
-            except Exception:
-                pass
+            except ValueError as e:
+                print(f"Error parsing geometry line '{lines[i]}': {e}")
         i += 1
 
     if not atomnos:
