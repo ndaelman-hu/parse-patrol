@@ -88,5 +88,26 @@ def iodata_parse_file_to_model(filepath: str) -> IODataModel:
     data = iodata_package.load_one(filepath)
     return iodata_to_model(data)
 
+@mcp.prompt()
+def iodata_test_prompt(
+    file_description: str,
+    output_format: str="a IOData for JSON serialization"
+) -> str:
+    """Generate a prompt for parsing chemistry files using IOData.
+    
+    Args:
+        file_description: Description of the file to be parsed
+        output_format: Desired output format (default: IOData)
+    
+    Returns:
+        Formatted prompt string for the MCP client
+    """
+
+    return ' '.join(f"""
+    Use `iodata_parse_file_to_model`
+    to parse the file with description {file_description}
+    and return the data as {output_format}.
+    """.strip().split())
+
 if __name__ == '__main__':
     mcp.run()
