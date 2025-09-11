@@ -18,6 +18,7 @@ This means introducing _redundancy in tooling_, so the agent can choose and test
 Currently available:
 
 - cclib
+- custom_gaussian
 
 Planned:
 
@@ -64,6 +65,10 @@ parse-patrol/
 ## Usage
 
 - **VS Code**: A central access server with all functional tools is registered under `.vscode/mcp.json` (copy from `.vscode/mcp.template.json`). It can be run from this file in the IDE, or found under the extensions the (`Ctrl+Shift+X` on Ubuntu). Once the server is started, it will be available to the `Agent` mode in co-pilot `CHAT`.
+
+### Starting the MCP servers remotely
+
+In VS Code, go t the command prompt, type `> mcp` and select "MCP: Open Remote User Configuration". It will open up a `mcp.json` file, where you can paste in your MCP server configurations.
 
 ## Development
 
