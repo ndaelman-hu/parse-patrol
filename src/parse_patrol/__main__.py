@@ -11,7 +11,6 @@ import src.cclib.__main__ as cclib_main
 import src.nomad.__main__ as nomad_main
 import src.custom_gaussian.__main__ as custom_gaussian_main
 
-
 mcp = FastMCP("Unified MCP Server")
 
 # Register all subservers' tools
