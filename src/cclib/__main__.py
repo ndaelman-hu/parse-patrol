@@ -145,7 +145,7 @@ def cclib_test_prompt(
     """
 
     return f"""
-    Use `cclib.__main__.parse_file_to_model`
+    Use `cclib_parse_file_to_model`
     to parse the file with description {file_description}
     and return the data as {output_format}.
     """
