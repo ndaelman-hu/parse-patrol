@@ -111,6 +111,7 @@ def parse_patrol_parser_pipeline_prompt(
     The pipeline should be modular and reusable for similar parsing tasks in the future.
     Make sure that all the imports are correct.
     Provide the complete code for the pipeline.
+    Make sure to avoid mistakes like `Accessing [0] on the search results without checking if the list is empty will raise an IndexError if no entries are found.`
     """
 
 
