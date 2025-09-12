@@ -2,7 +2,7 @@ import sys
 import os
 
 # Dynamically add the project root to the Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.insert(0, project_root)
 
 from typing import Any, Dict
@@ -38,13 +38,13 @@ def parse_gaussian_files(directory: str):
     return results
 
 if __name__ == "__main__":
-    directory = "test_files/gaussian"
+    directory = ".pipelines/data/gaussian"
     parsed_results = parse_gaussian_files(directory)
 
     # Save results to a log file
-    with open("pipelines/gaussian_parsing_results.log", "w") as log_file:
+    with open(".pipelines/scripts/gaussian_parsing_results.log", "w") as log_file:
         for filename, data in parsed_results.items():
             log_file.write(f"File: {filename}\n")
             log_file.write(f"Data: {data}\n\n")
 
-    print("Parsing complete. Results saved to pipelines/gaussian_parsing_results.log")
+    print("Parsing complete. Results saved to .pipelines/scripts/gaussian_parsing_results.log")
