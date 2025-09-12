@@ -109,10 +109,11 @@ def parse_patrol_parser_pipeline_prompt(
     Check what other tools are available in the parse-patrol toolkit and use them if needed.
     Make sure to include error handling for unsupported file types or parsing issues.
     The pipeline should be modular and reusable for similar parsing tasks in the future.
-    Make sure that all the imports are correct.
-    Provide the complete code for the pipeline.
+    Make sure that all the imports are correct. Provide the complete code for the pipeline.
     Make sure to avoid mistakes like `Accessing [0] on the search results without checking if the list is empty will raise an IndexError if no entries are found.`
     Don't assume that parsed_data is a dictionary, but the parser functions return Pydantic model instances. Use dot notation (e.g., parsed_data.atomcoords) or convert to dict first.
+    As a rule of thumb: `.chk` files (checkpoint files) should typically be parsed with Gaussian parser, not cclib. The cclib parser is better suited for `.log` and `.out` files. Consider swapping the parser assignments or using cclib for both cases since it supports multiple formats.
+    Consider adding type hints and input validation where appropriate.
     """
 
 
