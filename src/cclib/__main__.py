@@ -122,10 +122,10 @@ def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     Returns:
         CCDataModel with parsed data converted for JSON serialization
     """
-    ccdata = cclib.io.ccopen(filepath) # type: ignore
-    if ccdata is None:
+    filereader = cclib.io.ccopen(filepath) # type: ignore
+    if filereader is None:
         return CCDataModel()
-    ccdata.parse()
+    ccdata = filereader.parse()
     return ccdata_to_model(ccdata)
 
 
