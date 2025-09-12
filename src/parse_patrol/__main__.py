@@ -107,9 +107,10 @@ def parse_patrol_parser_pipeline_prompt(
 
         - Design and execute a parsing/conversion workflow using the available tools.
         - Log each step, including (pseudo-)code snippets for manual reproduction.
-        - Collect all logs and the final results, and save them into files for later reference.
+        - Collect all logs and the final results, and save them into files for later reference. Save it as .log, .yaml and .json files.
         - If you design a new workflow or pipeline, ensure the steps are clear and reproducible.
         - Avoid hallucinating code; instead, focus on executing real parsing/conversion steps ({preferred_tools}) and logging the process.
+        - Make sure to at least use two tools in the pipeline.
         - If possible, produce code artifacts that could be used to set up an entire database from similar files in the future.
         - Include error handling for unsupported file types or parsing issues.
         - Use the correct parser for each file type (e.g., `.chk` files with Gaussian parser, `.log`/`.out` files with cclib).
