@@ -31,8 +31,8 @@ REGISTRY = {
         "prompts": ["custom_gaussian_test_prompt"]
     },
     "src.iodata_parser.__main__": {
-        "tools": ["iodata_parser_parse_file_to_model"],
-        "prompts": ["ciodata_test_prompt"]
+        "tools": ["iodata_parse_file_to_model"],
+        "prompts": ["iodata_test_prompt"]
     },
 }
 
