@@ -81,6 +81,25 @@ def parse_patrol_assistant_prompt(
 
     Provide insights and recommendations based on the parsed data.
     """
+    
+@mcp.prompt(name="cleanup corrupted ab initio")
+def cleanup_corrupted_files_prompt() -> str:
+    """Generate a prompt to clean up corrupted computational chemistry files.
+    
+    Args:
+        file_paths: Comma-separated paths to the files to be cleaned
+
+    Returns:
+        Formatted prompt string for file cleanup
+    """
+
+    return f"""
+    You are helping me clean up corrupted computational chemistry files.
+    
+    1. Check the folders in `.data` with the various parsing tools.
+    2. Report back to me any files that raise errors, null fields with all parser tools.
+    3. Then you ask me whether I want to delete these files. Simple yes/no question.
+    """
 
 
 if __name__ == "__main__":
