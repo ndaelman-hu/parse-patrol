@@ -141,9 +141,8 @@ async def parse_file_to_model(filepath: str) -> CCDataModel:
 
 
 @mcp.prompt()
-def cclib_test_prompt(
-    file_description: str,
-    output_format: str="a CCDataModel for JSON serialization"
+async def cclib_test_prompt(
+    file_description: str, output_format: str = "a CCDataModel for JSON serialization"
 ) -> str:
     """Generate a prompt for parsing chemistry files using cclib.
     

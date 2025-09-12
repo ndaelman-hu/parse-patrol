@@ -19,20 +19,20 @@ SUBSERVERS = [
 # Tool and prompt function names to register from each module
 REGISTRY = {
     "src.cclib.__main__": {
-        "tools": ["cclib_parse_file_to_model"],
-        "prompts": ["cclib_test_prompt"]
+        "tools": ["parse_file_to_model"],
+        "prompts": ["cclib_test_prompt"],
     },
     "src.nomad.__main__": {
         "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
-        "prompts": ["nomad_materials_prompt"]
+        "prompts": ["nomad_materials_prompt"],
     },
     "src.custom_gaussian.__main__": {
         "tools": ["gauss_parse_file_to_model"],
-        "prompts": ["custom_gaussian_test_prompt"]
+        "prompts": ["custom_gaussian_test_prompt"],
     },
     "src.iodata_parser.__main__": {
         "tools": ["iodata_parse_file_to_model"],
-        "prompts": ["iodata_test_prompt"]
+        "prompts": ["iodata_test_prompt"],
     },
 }
 

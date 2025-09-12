@@ -468,9 +468,8 @@ async def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
 
 
 @mcp.prompt()
-def custom_gaussian_test_prompt(
-    file_description: str,
-    analysis_type: str = "comprehensive analysis"
+async def custom_gaussian_test_prompt(
+    file_description: str, analysis_type: str = "comprehensive analysis"
 ) -> str:
     """Generate a prompt for parsing Gaussian files with custom analysis.
     
