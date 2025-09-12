@@ -100,21 +100,22 @@ def parse_patrol_parser_pipeline_prompt(
         Formatted prompt string for the MCP client (which is supposed to write a parsing pipeline into a file).
     """
     return f"""
-    Generate a structured parsing pipeline for the following files: {file_paths}
+        You are to execute a structured parsing pipeline for the following files: {file_paths}
 
-    Task Description: {task_description}
-    Preferred Tools: {preferred_tools}
+        Task Description: {task_description}
+        Preferred Tools: {preferred_tools}
 
-    Please follow the structured parsing pipeline to extract the required information, summarize key chemical properties, and write the pipeline into a code file in the `pipelines` folder in the root of the repository.
-    Check what other tools are available in the parse-patrol toolkit and use them if needed.
-    Make sure to include error handling for unsupported file types or parsing issues.
-    The pipeline should be modular and reusable for similar parsing tasks in the future.
-    Make sure that all the imports are correct. Provide the complete code for the pipeline.
-    Make sure to avoid mistakes like `Accessing [0] on the search results without checking if the list is empty will raise an IndexError if no entries are found.`
-    Don't assume that parsed_data is a dictionary, but the parser functions return Pydantic model instances. Use dot notation (e.g., parsed_data.atomcoords) or convert to dict first.
-    As a rule of thumb: `.chk` files (checkpoint files) should typically be parsed with Gaussian parser, not cclib. The cclib parser is better suited for `.log` and `.out` files. Consider swapping the parser assignments or using cclib for both cases since it supports multiple formats.
-    Consider adding type hints and input validation where appropriate.
-    """
+        - Design and execute a parsing/conversion workflow using the available tools.
+        - Log each step, including (pseudo-)code snippets for manual reproduction.
+        - Collect all logs and the final results, and save them into files for later reference.
+        - If you design a new workflow or pipeline, ensure the steps are clear and reproducible.
+        - Avoid hallucinating code; instead, focus on executing real parsing/conversion steps ({preferred_tools}) and logging the process.
+        - If possible, produce code artifacts that could be used to set up an entire database from similar files in the future.
+        - Include error handling for unsupported file types or parsing issues.
+        - Use the correct parser for each file type (e.g., `.chk` files with Gaussian parser, `.log`/`.out` files with cclib).
+        - Use dot notation for Pydantic model instances returned by parser functions, or convert to dict as needed.
+        - Consider type hints and input validation where appropriate.
+        """
 
 
 if __name__ == "__main__":
