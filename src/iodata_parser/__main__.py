@@ -103,11 +103,10 @@ def iodata_test_prompt(
         Formatted prompt string for the MCP client
     """
 
-    return ' '.join(f"""
-    Use `iodata_parse_file_to_model`
-    to parse the file with description {file_description}
-    and return the data as {output_format}.
-    """.strip().split())
+    return (
+        f"Use `iodata_parse_file_to_model` to parse the file with description {file_description} "
+        f"and return the data as {output_format}."
+    )
 
 if __name__ == '__main__':
     mcp.run()
