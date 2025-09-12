@@ -53,10 +53,13 @@ parse-patrol/
 │   ├── parsers/                  # Parsing tools with their own MCP server in `__main__.py`
 │   └── utils/                    # Shared utilities/helpers
 ├── scripts/                      # (Currently empty) CLI tools, setup scripts, etc.
-├── pipelines/                # Scripts for generating parsing pipelines
-│   ├── agent_generated/      # Agent-produced pipeline scripts
-│   ├── examples/             # Example pipeline scripts
-└── .data/                 # Data files downloaded by nomad MCP, to parse by the agent
+├── .pipelines/                   # Scripts and data for parsing pipelines
+│   ├── scripts/                  # Agent-generated pipeline scripts and examples
+│   └── data/                     # Test data files for pipeline processing
+├── .resources/                   # Schema and documentation resources
+│   ├── semantic-schema.md        # Semantic schema definitions
+│   └── structure-schema.md       # Structure schema definitions
+└── .data/                        # Data files downloaded by nomad MCP, to parse by the agent
 ├── pyproject.toml
 ├── README.md
 ├── LICENSE
@@ -90,7 +93,7 @@ Once the servers passes the checks, register the new MCP server:
 
 Testing is done 2 ways:
 
-- the agent attempts to generate pipeline scripts. Successful cases may be stored under in `src/pipelines/agent_generated/`. The input to be processed is found in `src/pipelines/data/`. If it has to learn from example pipelines, place then under `src/pipelines/examples/`.
+- the agent attempts to generate pipeline scripts. Successful cases may be stored under in `.pipelines/scripts/`. The input to be processed is found in `.pipelines/data/`. Schema definitions and documentation resources are available in `.resources/`.
 - test the parser and server code in `tests/`.
 
 ## Online Resources

@@ -1,7 +1,7 @@
 # Gaussian Parsing Pipeline Log
 
 ## Step 1: File Identification
-- Located Gaussian files in the directory `test_files/gaussian`.
+- Located Gaussian files in the directory `.pipelines/data/gaussian`.
 - Files identified:
   - `frequency.chk`
   - `FREQUENCY.LOG`
@@ -42,7 +42,7 @@
 from src.custom_gaussian.__main__ import gauss_parse_file_to_model
 
 # Directory containing Gaussian files
-directory = "test_files/gaussian"
+directory = ".pipelines/data/gaussian"
 
 # Parse files
 results = {}
