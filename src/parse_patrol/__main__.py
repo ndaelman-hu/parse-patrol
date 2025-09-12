@@ -13,6 +13,7 @@ SUBSERVERS = [
     "src.cclib.__main__",
     "src.nomad.__main__",
     "src.custom_gaussian.__main__",
+    "src.iodata_parser.__main__",
 ]
 
 # Tool and prompt function names to register from each module
@@ -28,6 +29,10 @@ REGISTRY = {
     "src.custom_gaussian.__main__": {
         "tools": ["gauss_parse_file_to_model"],
         "prompts": ["custom_gaussian_test_prompt"]
+    },
+    "src.iodata_parser.__main__": {
+        "tools": ["iodata_parse_file_to_model"],
+        "prompts": ["iodata_test_prompt"]
     },
 }
 

@@ -8,6 +8,7 @@ dependencies = [
     "cclib>=1.8.1",
     "mcp[cli]>=1.13.1",
     "pydantic>=2.11.7",
+    "qc-iodata>=1.0.0a8",
     "requests>=2.32.5",
 ]
 
