@@ -6,7 +6,7 @@ This script defines a modular pipeline for parsing Gaussian files and extracting
 
 from typing import List, Dict, Any
 from mcp.server.fastmcp import FastMCP
-from src.cclib.__main__ import cclib_parse_file_to_model
+from src.cclib.__main__ import cclib_parse_file_to_model  # comment by CE: Agent wants to import modules like this which does not work, will still leave the fil here for now
 from src.custom_gaussian.__main__ import gauss_parse_file_to_model
 from src.iodata_parser.__main__ import iodata_parse_file_to_model
 from src.nomad.__main__ import search_nomad_entries, get_nomad_raw_files, get_nomad_archive
