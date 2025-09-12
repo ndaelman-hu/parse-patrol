@@ -103,7 +103,7 @@ async def iodata_test_prompt(
     """
 
     return (
-        f"Use `iodata_parse_file_to_model` to parse the file with description {file_description} "
+        f"Use `iodata_parse_file_to_model` to parse the file (with extension .fck) with description {file_description} "
         f"and return the data as {output_format}."
     )
 
