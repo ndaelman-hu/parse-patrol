@@ -106,8 +106,6 @@ async def search_nomad_entries(
     Returns:
         List of NOMADEntry objects matching the search criteria
     """
-    # Delete this line
-
 
     base_url = "https://nomad-lab.eu/prod/v1/api/v1/entries/query"
 
