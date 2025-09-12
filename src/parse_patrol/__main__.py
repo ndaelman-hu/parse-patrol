@@ -4,6 +4,7 @@ Unified MCP server entrypoint for parse-patrol.
 Collects and exposes all tools from subservers.
 """
 
+import importlib
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
@@ -20,24 +21,23 @@ SUBSERVERS = [
 REGISTRY = {
     "src.cclib.__main__": {
         "tools": ["cclib_parse_file_to_model"],
-        "prompts": ["cclib_test_prompt"]
+        "prompts": ["cclib_test_prompt"],
     },
     "src.nomad.__main__": {
         "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
-        "prompts": ["nomad_materials_prompt"]
+        "prompts": ["nomad_materials_prompt"],
     },
     "src.custom_gaussian.__main__": {
         "tools": ["gauss_parse_file_to_model"],
-        "prompts": ["custom_gaussian_test_prompt"]
+        "prompts": ["custom_gaussian_test_prompt"],
     },
     "src.iodata_parser.__main__": {
         "tools": ["iodata_parse_file_to_model"],
-        "prompts": ["iodata_test_prompt"]
+        "prompts": ["iodata_test_prompt"],
     },
 }
 
 # Import and register all subserver functions
-import importlib
 for module_name in SUBSERVERS:
     module = importlib.import_module(module_name)
     
@@ -52,9 +52,8 @@ for module_name in SUBSERVERS:
         mcp.prompt()(prompt_func)
 
 @mcp.prompt()
-def parse_patrol_assistant_prompt(
-    task_description: str,
-    preferred_tools: str = "any available parsers"
+async def parse_patrol_assistant_prompt(
+    task_description: str, preferred_tools: str = "any available parsers"
 ) -> str:
     """Generate an open-ended prompt for comprehensive chemistry file analysis.
     
@@ -83,7 +82,7 @@ def parse_patrol_assistant_prompt(
     """
     
 @mcp.prompt(name="cleanup corrupted ab initio")
-def cleanup_corrupted_files_prompt() -> str:
+async def cleanup_corrupted_files_prompt() -> str:
     """Generate a prompt to clean up corrupted computational chemistry files.
     
     Returns:
@@ -100,10 +99,10 @@ def cleanup_corrupted_files_prompt() -> str:
 
 
 @mcp.prompt()
-def parse_patrol_parser_pipeline_prompt(
+async def parse_patrol_parser_pipeline_prompt(
     file_paths: str,
     task_description: str = "Extract and summarize key chemical properties and write the pipeline into a code in a file to the folder `pipelines` in the root of the repository",
-    preferred_tools: str = "`get_nomad_raw_files`, `get_nomad_archive`, `search_nomad_entries`, `cclib_parse_file_to_model`, `iodata_parse_file_to_model`, `gauss_parse_file_to_model`"
+    preferred_tools: str = "`get_nomad_raw_files`, `get_nomad_archive`, `search_nomad_entries`, `cclib_parse_file_to_model`, `iodata_parse_file_to_model`, `gauss_parse_file_to_model`",
 ) -> str:
     """Generate a prompt for a structured parsing pipeline.
     

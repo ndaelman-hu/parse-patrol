@@ -44,6 +44,40 @@ To execute any script, use `uv run python <filepath>` (automatically calls `uv s
 To try out individual Python sessions open a new bash shell.
 Then activate the virtual environment via `. .venv/bin/activate`.You can now initiate your Python session (`python`).
 
+## Manual Testing setup
+MCP primitives developed for a single server can be tested using [MCP instructor](https://github.com/modelcontextprotocol/inspector). The problem with it can not handle multiple servers at once. So, it requires to test each server individually. (We did not find the way to inspect multiple servers at once using MCP inspector).
+```
+uv run mcp dev <path-to-server-file e.g., src/nomad/__main__.py>
+```
+Then click on the url link appeared on the terminal to open the MCP inspector in the browser or inspector will automatically open in browser.
+
+To run and test all the servers together in VS Code, as a client, list your servers in a `json` file e.g., `.vscode/mcp.json` and VSCode will be capable of detect the servers and can be run on the clicking button above the server (appeared in the VSCode UI).
+
+![mcp.json](images/mcp_json.png)
+
+Example of `mcp.json` listing all the servers:
+```Json
+{
+  "servers": {
+    "parse-patrol": {
+      "command": "uv",
+      "args": ["run", "python", "src/parse_patrol/__main__.py"],
+      "cwd": "${workspaceFolder}"
+    },
+    "cclib": {
+      "command": "uv",
+      "args": ["run", "python", "src/cclib/__main__.py"],
+      "cwd": "${workspaceFolder}"
+    },
+    "nomad": {
+      "command": "uv",
+      "args": ["run", "python", "src/nomad/__main__.py"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}
+```
+
 ## Project Structure
 
 ```

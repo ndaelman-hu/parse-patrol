@@ -1,8 +1,14 @@
 import cclib
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
+from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
+
 
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field
+
+
+configure_logging("INFO")
+logger = get_logger(__name__)
 
 
 class CCDataModel(BaseModel):
@@ -84,7 +90,7 @@ class CCDataModel(BaseModel):
     zpve: Optional[float] = Field(None, description="Zero-point vibrational energy correction (hartree/particle, float)")
 
 
-def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel: # type: ignore
+def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: ignore
     """Convert ccData object to CCDataModel (Pydantic) format.
     
     Args:
@@ -93,6 +99,7 @@ def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel: # type: ig
     Returns:
         CCDataModel with converted data types for JSON serialization
     """
+    logger.info("Converting ccData to CCDataModel...")
     result = {}
     for field_name in CCDataModel.model_fields.keys():
         if hasattr(ccdata, field_name):
@@ -109,11 +116,12 @@ def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel: # type: ig
                 result[field_name] = value
     return CCDataModel(**result)
 
+
 mcp = FastMCP("CCLib Chemistry Parser")
 
 
 @mcp.tool()
-def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
+async def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     """Parse chemistry file and return as CCDataModel for JSON serialization.
     
     Args:
@@ -122,17 +130,18 @@ def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     Returns:
         CCDataModel with parsed data converted for JSON serialization
     """
-    filereader = cclib.io.ccopen(filepath) # type: ignore
+    logger.info("Parsing file: %s ...", filepath)
+    filereader = cclib.io.ccopen(filepath)  # type: ignore
     if filereader is None:
+        logger.error("File not found: %s", filepath)
         return CCDataModel()
     ccdata = filereader.parse()
     return ccdata_to_model(ccdata)
 
 
 @mcp.prompt()
-def cclib_test_prompt(
-    file_description: str,
-    output_format: str="a CCDataModel for JSON serialization"
+async def cclib_test_prompt(
+    file_description: str, output_format: str = "a CCDataModel for JSON serialization"
 ) -> str:
     """Generate a prompt for parsing chemistry files using cclib.
     
