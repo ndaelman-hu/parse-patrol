@@ -76,7 +76,7 @@ def iodata_to_model(ext_data: iodata_package.IOData) -> IODataModel:
     return IODataModel(**result)
 
 @mcp.tool()
-def iodata_parse_file_to_model(filepath: str) -> IODataModel:
+async def iodata_parse_file_to_model(filepath: str) -> IODataModel:
     """Parse chemistry file and return as IODataModel for JSON serialization.
     
     Args:
@@ -89,9 +89,8 @@ def iodata_parse_file_to_model(filepath: str) -> IODataModel:
     return iodata_to_model(data)
 
 @mcp.prompt()
-def iodata_test_prompt(
-    file_description: str,
-    output_format: str="a IOData for JSON serialization"
+async def iodata_test_prompt(
+    file_description: str, output_format: str = "a IOData for JSON serialization"
 ) -> str:
     """Generate a prompt for parsing chemistry files using IOData.
     

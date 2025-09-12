@@ -4,6 +4,7 @@ Unified MCP server entrypoint for parse-patrol.
 Collects and exposes all tools from subservers.
 """
 
+import importlib
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
@@ -37,7 +38,6 @@ REGISTRY = {
 }
 
 # Import and register all subserver functions
-import importlib
 for module_name in SUBSERVERS:
     module = importlib.import_module(module_name)
     
@@ -52,9 +52,8 @@ for module_name in SUBSERVERS:
         mcp.prompt()(prompt_func)
 
 @mcp.prompt()
-def parse_patrol_assistant_prompt(
-    task_description: str,
-    preferred_tools: str = "any available parsers"
+async def parse_patrol_assistant_prompt(
+    task_description: str, preferred_tools: str = "any available parsers"
 ) -> str:
     """Generate an open-ended prompt for comprehensive chemistry file analysis.
     

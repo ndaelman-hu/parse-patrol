@@ -1,5 +1,3 @@
-import time
-import asyncio
 import aiofiles
 import aiohttp
 import zipfile
@@ -163,11 +161,6 @@ async def search_nomad_entries(
 
     try:
         async with aiohttp.ClientSession() as session:
-            # TODO: Remove debug lines
-            current_time = time.localtime()
-            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-            logger.info(f"_search_nomad_entries starts: {t1}")
-            await asyncio.sleep(3)
             async with session.post(
                 base_url, json=query_body, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
@@ -193,9 +186,6 @@ async def search_nomad_entries(
                 .get("program_version"),
             )
             entries.append(entry)
-        current_time = time.localtime()
-        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-        logger.info(f"_search_nomad_entries starts: {t1}  and ends: {t2}")
         return entries
 
     except aiohttp.ClientError as e:
@@ -213,11 +203,6 @@ async def get_nomad_raw_files(entry_id: str) -> str:
     Returns:
         Path to extracted files directory
     """
-    # current_time = time.localtime()
-    # t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-    # logger.info(f"get_nomad_raw_files starts: {t1}")
-    # await asyncio.sleep(3)
-
     # Create entry-specific directory
     data_dir = Path(".data") / entry_id
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -229,12 +214,8 @@ async def get_nomad_raw_files(entry_id: str) -> str:
     url = f"https://nomad-lab.eu/prod/v1/api/v1/entries/{entry_id}/raw"
     zip_path = data_dir / f"{entry_id}_raw.zip"
 
-    t1 = ""
     try:
         async with aiohttp.ClientSession() as session:
-            current_time = time.localtime()
-            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-            logger.info(f"get_nomad_raw_files starts: {t1}")
             async with session.get(
                 url, timeout=aiohttp.ClientTimeout(total=120)
             ) as resp:
@@ -250,9 +231,6 @@ async def get_nomad_raw_files(entry_id: str) -> str:
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(data_dir)
         zip_path.unlink()
-        current_time = time.localtime()
-        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-        logger.info(f"get_nomad_raw_files starts: {t1}  and ends: {t2}")
 
         return str(data_dir)
     except aiohttp.ClientError as e:
@@ -274,22 +252,13 @@ async def get_nomad_archive(
     Returns:
         Archive data as dictionary
     """
-    # current_time = time.localtime()
-    # t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-    # logger.info(f"get_nomad_archive starts: {t1}")
-    # await asyncio.sleep(3)
-
     url = f"https://nomad-lab.eu/prod/v1/api/v1/entries/{entry_id}/archive"
 
     params = {}
     if section:
         params["required"] = section
-    t1 = ""
     try:
         async with aiohttp.ClientSession() as session:
-            current_time = time.localtime()
-            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-            logger.info(f"get_nomad_archive starts: {t1}")
             async with session.get(
                 url, params=params, timeout=aiohttp.ClientTimeout(total=60)
             ) as resp:
@@ -298,19 +267,14 @@ async def get_nomad_archive(
                         f"Failed to download NOMAD archive for {entry_id}: HTTP {resp.status}"
                     )
                 data = await resp.json()
-        current_time = time.localtime()
-        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
-        logger.info(f"get_nomad_archive starts: {t1}  and ends: {t2}")
         return data
     except aiohttp.ClientError as e:
         raise Exception(f"Failed to download NOMAD archive for {entry_id}: {str(e)}")
 
 
 @mcp.prompt()
-def nomad_materials_prompt(
-    search_query: str,
-    action: NOMADAction = NOMADAction.search,
-    max_entries: int = 5
+async def nomad_materials_prompt(
+    search_query: str, action: NOMADAction = NOMADAction.search, max_entries: int = 5
 ) -> str:
     """Generate a prompt for NOMAD materials database interactions.
     

@@ -91,7 +91,7 @@ class CCDataModel(BaseModel):
     zpve: Optional[float] = Field(None, description="Zero-point vibrational energy correction (hartree/particle, float)")
 
 
-async def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: ignore
+def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: ignore
     """Convert ccData object to CCDataModel (Pydantic) format.
     
     Args:
