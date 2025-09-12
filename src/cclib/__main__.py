@@ -1,4 +1,3 @@
-import asyncio
 import cclib
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
