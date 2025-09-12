@@ -112,6 +112,7 @@ def parse_patrol_parser_pipeline_prompt(
     Make sure that all the imports are correct.
     Provide the complete code for the pipeline.
     Make sure to avoid mistakes like `Accessing [0] on the search results without checking if the list is empty will raise an IndexError if no entries are found.`
+    Don't assume that parsed_data is a dictionary, but the parser functions return Pydantic model instances. Use dot notation (e.g., parsed_data.atomcoords) or convert to dict first.
     """
 
 
