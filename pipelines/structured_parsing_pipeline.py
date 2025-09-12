@@ -28,9 +28,14 @@ def parse_and_summarize(file_paths):
             parsed_data = cclib_parse_file_to_model(file_path)
         else:
             # Use NOMAD tools for other file types
-            entry_id = search_nomad_entries(formula="", program_name="", start=1, end=1)[0].entry_id
-            raw_files_path = get_nomad_raw_files(entry_id)
-            parsed_data = get_nomad_archive(entry_id)
+            nomad_entries = search_nomad_entries(formula="", program_name="", start=1, end=1)
+            if nomad_entries:
+                entry_id = nomad_entries[0].entry_id
+                raw_files_path = get_nomad_raw_files(entry_id)
+                parsed_data = get_nomad_archive(entry_id)
+            else:
+                # Handle the case where no NOMAD entries are found
+                parsed_data = {}
 
         # Summarize key properties
         summary[file_path] = {
