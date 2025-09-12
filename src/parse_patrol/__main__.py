@@ -86,9 +86,6 @@ def parse_patrol_assistant_prompt(
 def cleanup_corrupted_files_prompt() -> str:
     """Generate a prompt to clean up corrupted computational chemistry files.
     
-    Args:
-        file_paths: Comma-separated paths to the files to be cleaned
-
     Returns:
         Formatted prompt string for file cleanup
     """
