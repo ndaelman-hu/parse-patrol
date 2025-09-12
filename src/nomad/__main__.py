@@ -1,8 +1,11 @@
-import requests
+import time
+import asyncio
+import aiofiles
+import aiohttp
 import zipfile
 from pathlib import Path
-from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-
+from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
+from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
@@ -15,21 +18,25 @@ class NOMADAction(str, Enum):
     search_and_download = "search_and_download"
 
 
+configure_logging()
+logger = get_logger(__name__)
+
+
 class EntryRange(BaseModel):
     start: int = Field(..., ge=1, description="Starting entry number (1-based)")
     end: int = Field(..., ge=1, description="Ending entry number (1-based)")
-    
-    @field_validator('end')
+
+    @field_validator("end")
     @classmethod
     def end_must_be_greater_than_start(cls, v, info):
-        if info.data.get('start') and v < info.data['start']:
-            raise ValueError('end must be greater than or equal to start')
+        if info.data.get("start") and v < info.data["start"]:
+            raise ValueError("end must be greater than or equal to start")
         return v
-    
+
     @property
     def limit(self) -> int:
         return self.end - self.start + 1
-    
+
     @property
     def page_offset(self) -> int:
         return (self.start - 1) // self.limit
@@ -39,17 +46,21 @@ class NOMADEntry(BaseModel):
     entry_id: str = Field(..., description="NOMAD entry ID")
     upload_id: Optional[str] = Field(None, description="NOMAD upload ID")
     formula: Optional[str] = Field(None, description="Chemical formula")
-    program_name: Optional[str] = Field(None, description="Computational program used (VASP, Gaussian, etc.)")
-    program_version: Optional[str] = Field(None, description="Version of the computational program")
+    program_name: Optional[str] = Field(
+        None, description="Computational program used (VASP, Gaussian, etc.)"
+    )
+    program_version: Optional[str] = Field(
+        None, description="Version of the computational program"
+    )
 
 
 def _parse_date_to_timestamp(date_str: str, end_of_day: bool = False) -> Optional[int]:
     """Parse date string to Unix timestamp in milliseconds.
-    
+
     Args:
         date_str: Date string in various formats
         end_of_day: If True and date is date-only, set to end of day (23:59:59)
-    
+
     Returns:
         Unix timestamp in milliseconds, or None if parsing fails
     """
@@ -68,7 +79,6 @@ def _parse_date_to_timestamp(date_str: str, end_of_day: bool = False) -> Optiona
                     parsed_date = parsed_date.replace(hour=23, minute=59, second=59)
             except ValueError:
                 return None
-    
     # Convert to Unix timestamp in milliseconds
     return int(parsed_date.timestamp() * 1000)
 
@@ -77,16 +87,16 @@ mcp = FastMCP("NOMAD Central Materials Database")
 
 
 @mcp.tool()
-def search_nomad_entries(
+async def search_nomad_entries(
     formula: Optional[str] = None,
     program_name: Optional[str] = None,
     start: int = 1,
     end: int = 10,
     date_from: Optional[str] = None,
-    date_to: Optional[str] = None
+    date_to: Optional[str] = None,
 ) -> List[NOMADEntry]:
     """Search NOMAD database for materials entries.
-    
+
     Args:
         formula: Chemical formula (e.g., "Si2O4", "C6H6")
         program_name: Computational program (e.g., "Gaussian", "ORCA")
@@ -94,15 +104,18 @@ def search_nomad_entries(
         end: Ending entry number (1-based, default: 10)
         date_from: Start date for upload time filter (ISO format: "2024-01-01")
         date_to: End date for upload time filter (ISO format: "2024-12-31")
-    
+
     Returns:
         List of NOMADEntry objects matching the search criteria
     """
+    # Delete this line
+
+
     base_url = "https://nomad-lab.eu/prod/v1/api/v1/entries/query"
-    
+
     # Create entry range from start/end parameters
     entry_range = EntryRange(start=start, end=end)
-    
+
     # Build query parameters
     query_body = {
         "owner": "visible",
@@ -112,134 +125,184 @@ def search_nomad_entries(
             "order_by": "upload_create_time",
             "order": "desc",
             "page_size": entry_range.limit,
-            "page_offset": entry_range.page_offset
+            "page_offset": entry_range.page_offset,
         },
-        "required": {
-            "exclude": [
-                "quantities",
-                "sections",
-                "files"
-            ]
-        }
+        "required": {"exclude": ["quantities", "sections", "files"]},
     }
-    
+
     # Add search filters
     if formula:
         query_body["query"]["results.material.chemical_formula_reduced:any"] = [formula]
     if program_name:
-        query_body["query"]["results.method.simulation.program_name:any"] = [program_name]
-    
+        query_body["query"]["results.method.simulation.program_name:any"] = [
+            program_name
+        ]
+
     # Add date filters - NOMAD expects Unix timestamps in milliseconds
     date_filter = {}
-    
+
     if date_from:
         timestamp_ms = _parse_date_to_timestamp(date_from)
         if timestamp_ms is None:
-            raise ValueError(f"Invalid date_from format: '{date_from}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-01-01T10:30:00', '2024-01-01'")
+            raise ValueError(
+                f"Invalid date_from format: '{date_from}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-01-01T10:30:00', '2024-01-01'"
+            )
         date_filter["gte"] = timestamp_ms
-    
+
     if date_to:
         timestamp_ms = _parse_date_to_timestamp(date_to, end_of_day=True)
         if timestamp_ms is None:
-            raise ValueError(f"Invalid date_to format: '{date_to}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-12-31T23:59:59', '2024-12-31'")
+            raise ValueError(
+                f"Invalid date_to format: '{date_to}'. Supported formats: 'MM/DD/YYYY HH:MM', '2024-12-31T23:59:59', '2024-12-31'"
+            )
         date_filter["lte"] = timestamp_ms
-    
+
     # Add the date filter to query if any dates were provided
     if date_filter:
         query_body["query"]["upload_create_time"] = date_filter
-    
+
     try:
-        response = requests.post(base_url, json=query_body, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        
+        async with aiohttp.ClientSession() as session:
+            # TODO: Remove debug lines
+            current_time = time.localtime()
+            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+            logger.info(f"_search_nomad_entries starts: {t1}")
+            await asyncio.sleep(3)
+            async with session.post(
+                base_url, json=query_body, timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
+                if resp.status != 200:
+                    raise Exception(f"Failed to query NOMAD API: HTTP {resp.status}")
+                data = await resp.json()
+
         entries = []
         for item in data.get("data", []):
             entry = NOMADEntry(
                 entry_id=item.get("entry_id", ""),
                 upload_id=item.get("upload_id"),
-                formula=item.get("results", {}).get("material", {}).get("chemical_formula_reduced"),
-                program_name=item.get("results", {}).get("method", {}).get("simulation", {}).get("program_name"),
-                program_version=item.get("results", {}).get("method", {}).get("simulation", {}).get("program_version"),
+                formula=item.get("results", {})
+                .get("material", {})
+                .get("chemical_formula_reduced"),
+                program_name=item.get("results", {})
+                .get("method", {})
+                .get("simulation", {})
+                .get("program_name"),
+                program_version=item.get("results", {})
+                .get("method", {})
+                .get("simulation", {})
+                .get("program_version"),
             )
             entries.append(entry)
-        
+        current_time = time.localtime()
+        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+        logger.info(f"_search_nomad_entries starts: {t1}  and ends: {t2}")
         return entries
-        
-    except requests.RequestException as e:
+
+    except aiohttp.ClientError as e:
         raise Exception(f"Failed to query NOMAD API: {str(e)}")
 
 
+
 @mcp.tool()
-def get_nomad_raw_files(entry_id: str) -> str:
+async def get_nomad_raw_files(entry_id: str) -> str:
     """Download and extract NOMAD raw files to .data directory.
-    
+
     Args:
         entry_id: NOMAD entry ID
-    
+
     Returns:
         Path to extracted files directory
     """
-    
+    # current_time = time.localtime()
+    # t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+    # logger.info(f"get_nomad_raw_files starts: {t1}")
+    # await asyncio.sleep(3)
+
     # Create entry-specific directory
     data_dir = Path(".data") / entry_id
     data_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Check if files already downloaded
     if any(data_dir.iterdir()):
         return str(data_dir)
-    
-    # Download raw files as zip
+
     url = f"https://nomad-lab.eu/prod/v1/api/v1/entries/{entry_id}/raw"
     zip_path = data_dir / f"{entry_id}_raw.zip"
-    
+
+    t1 = ""
     try:
-        response = requests.get(url, timeout=120, stream=True)
-        response.raise_for_status()
-        
-        # Save zip file
-        with open(zip_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-        
-        # Extract zip
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        async with aiohttp.ClientSession() as session:
+            current_time = time.localtime()
+            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+            logger.info(f"get_nomad_raw_files starts: {t1}")
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=120)
+            ) as resp:
+                if resp.status != 200:
+                    raise Exception(
+                        f"Failed to download NOMAD raw files for {entry_id}: HTTP {resp.status}"
+                    )
+                async with aiofiles.open(zip_path, "wb") as f:
+                    async for chunk in resp.content.iter_chunked(8192):
+                        await f.write(chunk)
+
+        # Extract zip (sync, as zipfile is not async)
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(data_dir)
-        
-        # Remove zip file
         zip_path.unlink()
-        
+        current_time = time.localtime()
+        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+        logger.info(f"get_nomad_raw_files starts: {t1}  and ends: {t2}")
+
         return str(data_dir)
-        
-    except requests.RequestException as e:
+    except aiohttp.ClientError as e:
         raise Exception(f"Failed to download NOMAD raw files for {entry_id}: {str(e)}")
     except zipfile.BadZipFile as e:
         raise Exception(f"Failed to extract NOMAD raw files for {entry_id}: {str(e)}")
 
 
 @mcp.tool()
-def get_nomad_archive(entry_id: str, section: Optional[str] = None) -> Dict[str, Any]:
+async def get_nomad_archive(
+    entry_id: str, section: Optional[str] = None
+) -> Dict[str, Any]:
     """Download NOMAD archive data for detailed computational results.
-    
+
     Args:
         entry_id: NOMAD entry ID
         section: Optional section to retrieve (e.g., "run", "workflow", "results")
-    
+
     Returns:
         Archive data as dictionary
     """
+    # current_time = time.localtime()
+    # t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+    # logger.info(f"get_nomad_archive starts: {t1}")
+    # await asyncio.sleep(3)
+
     url = f"https://nomad-lab.eu/prod/v1/api/v1/entries/{entry_id}/archive"
-    
+
     params = {}
     if section:
         params["required"] = section
-    
+    t1 = ""
     try:
-        response = requests.get(url, params=params, timeout=60)
-        response.raise_for_status()
-        return response.json()
-        
-    except requests.RequestException as e:
+        async with aiohttp.ClientSession() as session:
+            current_time = time.localtime()
+            t1 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+            logger.info(f"get_nomad_archive starts: {t1}")
+            async with session.get(
+                url, params=params, timeout=aiohttp.ClientTimeout(total=60)
+            ) as resp:
+                if resp.status != 200:
+                    raise Exception(
+                        f"Failed to download NOMAD archive for {entry_id}: HTTP {resp.status}"
+                    )
+                data = await resp.json()
+        current_time = time.localtime()
+        t2 = f"Hour: {current_time.tm_min}, Second: {current_time.tm_sec}"
+        logger.info(f"get_nomad_archive starts: {t1}  and ends: {t2}")
+        return data
+    except aiohttp.ClientError as e:
         raise Exception(f"Failed to download NOMAD archive for {entry_id}: {str(e)}")
 
 

@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from typing import Optional, Dict, List, Any, Tuple
 import re
@@ -5,6 +6,11 @@ import re
 from pydantic import BaseModel, Field
 import periodictable
 from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
+from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
+
+
+configure_logging("INFO")
+logger = get_logger(__name__)
 
 
 class CustomGaussianDataModel(BaseModel):
@@ -417,7 +423,7 @@ def _parse_fchk(path: Path) -> CustomGaussianDataModel:
 
 
 @mcp.tool()
-def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
+async def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
     """
     Parse a Gaussian file (.log/.out, .gjf/.com, .fchk) and return a CustomGaussianDataModel.
 
@@ -432,8 +438,11 @@ def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
     Returns:
         CustomGaussianDataModel with parsed contents.
     """
+
+    logger.info("Parsing Gaussian file: %s ...", filepath)
     path = Path(filepath)
     if not path.exists():
+        logger.error("File not found: %s", filepath)
         return CustomGaussianDataModel(metadata={"error": f"File not found: {filepath}"})
 
     ext = path.suffix.lower()

@@ -10,6 +10,9 @@ dependencies = [
     "pydantic>=2.11.7",
     "qc-iodata>=1.0.0a8",
     "requests>=2.32.5",
+    "asyncio>=4.0.0",
+    "aiofiles>=24.1.0",
+    "aiohttp",
 ]
 
 
