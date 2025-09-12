@@ -121,7 +121,7 @@ mcp = FastMCP("CCLib Chemistry Parser")
 
 
 @mcp.tool()
-async def parse_file_to_model(filepath: str) -> CCDataModel:
+async def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     """Parse chemistry file and return as CCDataModel for JSON serialization.
     
     Args:
@@ -131,8 +131,8 @@ async def parse_file_to_model(filepath: str) -> CCDataModel:
         CCDataModel with parsed data converted for JSON serialization
     """
     logger.info("Parsing file: %s ...", filepath)
-    ccdata = cclib.io.ccopen(filepath) # type: ignore
-    if ccdata is None:
+    filereader = cclib.io.ccopen(filepath)  # type: ignore
+    if filereader is None:
         logger.error("File not found: %s", filepath)
         return CCDataModel()
     ccdata = filereader.parse()

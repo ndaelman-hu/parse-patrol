@@ -20,7 +20,7 @@ SUBSERVERS = [
 # Tool and prompt function names to register from each module
 REGISTRY = {
     "src.cclib.__main__": {
-        "tools": ["parse_file_to_model"],
+        "tools": ["cclib_parse_file_to_model"],
         "prompts": ["cclib_test_prompt"],
     },
     "src.nomad.__main__": {
