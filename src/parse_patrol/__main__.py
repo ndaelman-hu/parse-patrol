@@ -115,6 +115,9 @@ def parse_patrol_parser_pipeline_prompt(
         - Use the correct parser for each file type (e.g., `.chk` files with Gaussian parser, `.log`/`.out` files with cclib).
         - Use dot notation for Pydantic model instances returned by parser functions, or convert to dict as needed.
         - Consider type hints and input validation where appropriate.
+        - Summarize the final parsed data and any insights gained from the analysis.
+        - Test and validate the pipeline using the tools from [{preferred_tools}] that you have chosen in agentic mode in the chat.
+        - After successful validation, write the entire pipeline into a code in a file to the folder `pipelines` in the root of the repository.
         """
 
 
