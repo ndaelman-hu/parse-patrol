@@ -144,3 +144,7 @@ The following links explain the basics of MCP, including the distinction between
 - cclib
   - Docs explaining the supported fields and codes: https://cclib.github.io/data.html
   - Repo for in-depth navigation of the code: https://github.com/cclib
+
+## Demo video clip
+
+  ![parse_patrol_demo](assets/videos/parse_patrol_demo.mp4)
