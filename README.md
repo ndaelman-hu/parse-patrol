@@ -147,4 +147,5 @@ The following links explain the basics of MCP, including the distinction between
 
 ## Demo video clip
 
-  ![parse_patrol_demo](assets/videos/parse_patrol_demo.mp4)
+[![Watch the demo](https://img.youtube.com/vi/fSAyi5ubkR0/0.jpg)](https://youtu.be/fSAyi5ubkR0)
+
