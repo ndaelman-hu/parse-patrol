@@ -53,7 +53,7 @@ Then click on the url link appeared on the terminal to open the MCP inspector in
 
 To run and test all the servers together in VS Code, as a client, list your servers in a `json` file e.g., `.vscode/mcp.json` and VSCode will be capable of detect the servers and can be run on the clicking button above the server (appeared in the VSCode UI).
 
-![mcp.json](images/mcp_json.png)
+![mcp.json](assets/images/mcp_json.png)
 
 Example of `mcp.json` listing all the servers:
 ```Json
