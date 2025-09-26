@@ -63,11 +63,21 @@ uv sync  # Creates venv and installs dependencies
 ```
 
 ### For Direct Python Usage
-```bash
-# Development mode installation
-uv sync
 
-# Use in your Python code  
+**Install specific parsers only:**
+```bash
+# Install just cclib parser
+uv sync --extra cclib
+
+# Install multiple parsers
+uv sync --extra cclib --extra gaussian --extra iodata
+
+# Install all parsers at once
+uv sync --extra parsers
+```
+
+**Use in your Python code:**
+```python
 from parse_patrol import cclib_parse, gaussian_parse, iodata_parse
 
 result = cclib_parse("my_calculation.log")
@@ -76,21 +86,31 @@ print(f"Final energy: {result.final_energy}")
 
 ### For MCP Server Usage
 
-**Option 1: Development installation with MCP support**
+**Install with specific parser support:**
 ```bash
-uv sync --extra mcp  # Installs with MCP dependencies in local venv
-uv run python -m parse_patrol  # Run the MCP server
+# MCP + specific parsers
+uv sync --extra mcp --extra cclib --extra gaussian
+
+# MCP + all parsers 
+uv sync --extra all-parsers
+
+# Everything (parsers + databases + MCP + dev tools)
+uv sync --extra all
 ```
 
-**Option 2: Temporary execution (no installation)**
+**Run the MCP server:**
 ```bash
-uvx --from . parse-patrol-mcp  # Runs MCP server without installing
+uv run python -m parse_patrol  # Run the unified MCP server
 ```
 
-**Option 3: System-wide installation**
+**Alternative installation methods:**
 ```bash
-uv tool install .  # Installs parse-patrol-mcp command globally
-parse-patrol-mcp    # Run from anywhere
+# Temporary execution (no installation)
+uvx --from .[all] parse-patrol-mcp
+
+# System-wide installation
+uv tool install .[all-parsers]
+parse-patrol-mcp
 ```
 
 ## Testing

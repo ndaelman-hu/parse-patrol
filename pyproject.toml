@@ -5,26 +5,52 @@ description = "Dual-mode chemistry parsing package: MCP discovery + direct Pytho
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cclib>=1.8.1",
     "pydantic>=2.11.7", 
-    "qc-iodata>=1.0.0a8",
     "requests>=2.32.5",
-    "periodictable>=1.6.1",
-    "zipfile-deflate64>=0.2.0",
 ]
 
 [project.optional-dependencies]
+# Parser dependencies (can be installed individually)
+cclib = [
+    "cclib>=1.8.1",
+]
+gaussian = [
+    "periodictable>=1.6.1",
+]
+iodata = [
+    "qc-iodata>=1.0.0a8",
+]
+nomad = [
+    "zipfile-deflate64>=0.2.0",
+]
+
+# Parser groups
+parsers = [
+    "parse_patrol[cclib,gaussian,iodata]"
+]
+databases = [
+    "parse_patrol[nomad]"
+]
+
+# MCP server functionality
 mcp = [
     "mcp[cli]>=1.13.1",
 ]
+
+# Development tools
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0", 
     "black>=22.0.0",
     "ruff>=0.0.261",
 ]
+
+# Convenience groups
+all-parsers = [
+    "parse_patrol[parsers,mcp]"
+]
 all = [
-    "parse_patrol[mcp,dev]"
+    "parse_patrol[parsers,databases,mcp,dev]"
 ]
 
 [project.scripts]

@@ -24,18 +24,35 @@ Note: Database tools (NOMAD) are only available via MCP for discovery/experiment
 """
 
 # Import parser functions only (not database tools)
-from .parsers.cclib.utils import cclib_parse, CCDataModel
-from .parsers.gaussian.utils import gaussian_parse, CustomGaussianDataModel  
-from .parsers.iodata.utils import iodata_parse, IODataModel
-
+# Handle optional dependencies gracefully
 __version__ = "0.1.0"
-__all__ = [
-    # Parser functions
-    "cclib_parse",
-    "gaussian_parse", 
-    "iodata_parse",
-    # Data models
-    "CCDataModel",
-    "CustomGaussianDataModel",
-    "IODataModel",
+__all__ = []
+
+# Parser configuration: (module_path, function_name, model_name, parser_name)
+PARSERS = [
+    (".parsers.cclib.utils", "cclib_parse", "CCDataModel", "cclib"),
+    (".parsers.gaussian.utils", "gaussian_parse", "CustomGaussianDataModel", "gaussian"),
+    (".parsers.iodata.utils", "iodata_parse", "IODataModel", "iodata"),
 ]
+
+# Import available parsers
+_available_parsers = []
+for module_path, func_name, model_name, parser_name in PARSERS:
+    try:
+        module = __import__(f"parse_patrol{module_path}", fromlist=[func_name, model_name])
+        func = getattr(module, func_name)
+        model = getattr(module, model_name)
+        
+        # Add to globals and __all__
+        globals()[func_name] = func
+        globals()[model_name] = model
+        __all__.extend([func_name, model_name])
+        _available_parsers.append(parser_name)
+    except ImportError:
+        pass
+
+def available_parsers():
+    """Return a list of available parsers based on installed dependencies."""
+    return _available_parsers.copy()
+
+__all__.append("available_parsers")

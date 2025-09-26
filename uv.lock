@@ -371,22 +371,35 @@ name = "parse-patrol"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "cclib" },
-    { name = "periodictable" },
     { name = "pydantic" },
-    { name = "qc-iodata" },
     { name = "requests" },
-    { name = "zipfile-deflate64" },
 ]
 
 [distribution.optional-dependencies]
 all = [
     { name = "black" },
+    { name = "cclib" },
     { name = "mcp" },
     { name = "mcp", extra = ["cli"] },
+    { name = "periodictable" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "qc-iodata" },
     { name = "ruff" },
+    { name = "zipfile-deflate64" },
+]
+all-parsers = [
+    { name = "cclib" },
+    { name = "mcp" },
+    { name = "mcp", extra = ["cli"] },
+    { name = "periodictable" },
+    { name = "qc-iodata" },
+]
+cclib = [
+    { name = "cclib" },
+]
+databases = [
+    { name = "zipfile-deflate64" },
 ]
 dev = [
     { name = "black" },
@@ -394,9 +407,23 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "ruff" },
 ]
+gaussian = [
+    { name = "periodictable" },
+]
+iodata = [
+    { name = "qc-iodata" },
+]
 mcp = [
     { name = "mcp" },
     { name = "mcp", extra = ["cli"] },
+]
+nomad = [
+    { name = "zipfile-deflate64" },
+]
+parsers = [
+    { name = "cclib" },
+    { name = "periodictable" },
+    { name = "qc-iodata" },
 ]
 
 [[distribution]]
