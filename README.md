@@ -1,10 +1,20 @@
 # parse-patrol
 
+> **"Try Before You Buy"** - Dual-Mode Chemistry Parsing Package
+
 ## Project Overview
 
-Dual-mode computational chemistry parsing package for LLM Hackathon in Materials Science and Chemistry 2025.
+**Dual-mode architecture** is a software design pattern that enables the perfect "try before you buy" workflow for AI tools. Parse-patrol demonstrates this architecture by providing computational chemistry parsing tools that can be both discovered/experimented with via MCP protocol AND directly imported for production use.
 
-Parse-patrol provides chemistry parsing tools in **two modes**:
+*Submission for LLM Hackathon in Materials Science and Chemistry 2025.*
+
+## The Dual-Mode Architecture
+
+Parse-patrol implements **dual-mode** to solve a common problem: the disconnect between AI experimentation and production integration.
+
+**The Problem:** LLMs discover tools, experiment, and generate code - but then developers must manually figure out how to integrate the same functionality into their applications.
+
+**The Solution:** Dual-mode architecture where the same tools are accessible via:
 
 ### 🔍 **MCP Discovery Mode**
 LLMs can discover and experiment with tools through MCP protocol:
