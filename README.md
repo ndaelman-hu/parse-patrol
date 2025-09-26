@@ -2,28 +2,36 @@
 
 ## Project Overview
 
-Submission for LLM Hackathon in Materials Science and Chemistry 2025.
-A Python-based testing ground for MCP (Model Context Protocol) servers, parsing tools, and agent-generated pipelines. It should support any arbitrary format specified by the user. Designed for LLM agent integration in IDEs like VS Code.
+Dual-mode computational chemistry parsing package for LLM Hackathon in Materials Science and Chemistry 2025.
 
-Parse-patrol showcases the **added benefit of MCP** for agents:
+Parse-patrol provides chemistry parsing tools in **two modes**:
 
-- _semantic robustness_ via well-defined and test parser code.
-- lowered resource consumption, i.e. less thought iterations.
-- quick and modular _patching of knowledge gaps_.
+### 🔍 **MCP Discovery Mode**
+LLMs can discover and experiment with tools through MCP protocol:
+- **Parser tools**: cclib, gaussian, iodata for parsing computational chemistry files
+- **Database tools**: NOMAD materials database search and file download
+- **Prompts**: Pre-built prompts for common chemistry analysis workflows
 
-This means introducing _redundancy in tooling_, so the agent can choose and test from multiple resources.
+### ⚡ **Direct Import Mode** 
+Developers can install and use parser functions directly in production code:
+```python
+from parse_patrol import cclib_parse, gaussian_parse, iodata_parse
 
-### Supported Servers
+# Parse chemistry files directly - sync functions
+result = cclib_parse("calculation.log")
+gauss_data = gaussian_parse("gaussian.out") 
+iodata_result = iodata_parse("structure.xyz")
+```
 
-Currently available:
+### Available Tools
 
-- cclib
-- custom_gaussian
+**Parser Tools** (both MCP + direct import):
+- **cclib**: Multi-format quantum chemistry parser (Gaussian, ORCA, etc.)
+- **gaussian**: Custom Gaussian file parser (.log, .out, .gjf, .fchk)
+- **iodata**: IOData-based parser for various chemistry formats
 
-Planned:
-
-- openbabel
-- nomad-lab (?)
+**Database Tools** (MCP only):
+- **NOMAD**: Search and download from NOMAD materials database
 
 Potential development routes -aside from extending tooling- include:
 
@@ -34,49 +42,109 @@ Potential development routes -aside from extending tooling- include:
 
 ## Installation
 
+### Prerequisites
+This project uses `uv` for Python package management. If you don't have it installed:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Understanding `uv` vs `uvx`:**
+- **`uv`**: Package manager and virtual environment tool (like pip + venv combined)
+- **`uvx`**: Tool for running packages temporarily without installation (like pipx)
+
+### Development Setup
 There is currently only a development version of this project.
 Firstly, `git clone` this repository to your own local machine.
 
-This project is managed via `uv` for Python.
-Dependencies are set in `pyproject.toml` and are updated via `uv sync`.
-To execute any script, use `uv run python <filepath>` (automatically calls `uv sync`).
-
-To try out individual Python sessions open a new bash shell.
-Then activate the virtual environment via `. .venv/bin/activate`.You can now initiate your Python session (`python`).
-
-## Manual Testing setup
-MCP primitives developed for a single server can be tested using [MCP instructor](https://github.com/modelcontextprotocol/inspector). The problem with it can not handle multiple servers at once. So, it requires to test each server individually. (We did not find the way to inspect multiple servers at once using MCP inspector).
+```bash
+git clone <repository>
+cd parse-patrol
+uv sync  # Creates venv and installs dependencies
 ```
-uv run mcp dev <path-to-server-file e.g., src/nomad/__main__.py>
+
+### For Direct Python Usage
+```bash
+# Development mode installation
+uv sync
+
+# Use in your Python code  
+from parse_patrol import cclib_parse, gaussian_parse, iodata_parse
+
+result = cclib_parse("my_calculation.log")
+print(f"Final energy: {result.final_energy}")
+```
+
+### For MCP Server Usage
+
+**Option 1: Development installation with MCP support**
+```bash
+uv sync --extra mcp  # Installs with MCP dependencies in local venv
+uv run python -m parse_patrol  # Run the MCP server
+```
+
+**Option 2: Temporary execution (no installation)**
+```bash
+uvx --from . parse-patrol-mcp  # Runs MCP server without installing
+```
+
+**Option 3: System-wide installation**
+```bash
+uv tool install .  # Installs parse-patrol-mcp command globally
+parse-patrol-mcp    # Run from anywhere
+```
+
+## Testing
+
+### Manual Testing with MCP Inspector
+MCP primitives developed for a single server can be tested using [MCP instructor](https://github.com/modelcontextprotocol/inspector). The problem with it can not handle multiple servers at once. So, it requires to test each server individually. (We did not find the way to inspect multiple servers at once using MCP inspector).
+
+```bash
+# Test the unified server (recommended)
+uv run mcp dev -m parse_patrol
+
+# Test individual parsers  
+uv run mcp dev -m parse_patrol.parsers.cclib
+uv run mcp dev -m parse_patrol.parsers.gaussian
+uv run mcp dev -m parse_patrol.databases.nomad
 ```
 Then click on the url link appeared on the terminal to open the MCP inspector in the browser or inspector will automatically open in browser.
 
+### VS Code Integration
 To run and test all the servers together in VS Code, as a client, list your servers in a `json` file e.g., `.vscode/mcp.json` and VSCode will be capable of detect the servers and can be run on the clicking button above the server (appeared in the VSCode UI).
 
 ![mcp.json](assets/images/mcp_json.png)
 
-Example of `mcp.json` listing all the servers:
-```Json
+## MCP Configuration
+
+### Quick Setup
+Ready-to-use configuration templates are available in the `templates/` folder:
+
+- **VS Code**: Copy `templates/vscode-mcp.json` to `.vscode/mcp.json`
+- **Claude Desktop**: Copy content from `templates/claude-desktop-mcp.json` to your Claude config
+- **Neovim**: Use `templates/neovim-mcp.json` as a starting point
+
+See `templates/README.md` for detailed setup instructions for each editor.
+
+### Main Configuration
+All templates use the unified server that provides all tools:
+
+```json
 {
   "servers": {
     "parse-patrol": {
       "command": "uv",
-      "args": ["run", "python", "src/parse_patrol/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    },
-    "cclib": {
-      "command": "uv",
-      "args": ["run", "python", "src/cclib/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    },
-    "nomad": {
-      "command": "uv",
-      "args": ["run", "python", "src/nomad/__main__.py"],
-      "cwd": "${workspaceFolder}"
+      "args": ["run", "python", "-m", "parse_patrol"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      }
     }
   }
 }
 ```
+
+### Individual Servers (Testing Only)
+For testing specific parsers, see `templates/README.md` for examples of individual server configurations.
 
 ## Project Structure
 

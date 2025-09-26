@@ -4,52 +4,29 @@ Unified MCP server entrypoint for parse-patrol.
 Collects and exposes all tools from subservers.
 """
 
-import importlib
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
 
-# Subserver modules to register
-SUBSERVERS = [
-    "parse_patrol.parsers.cclib.__main__",
-    "parse_patrol.parsers.gaussian.__main__", 
-    "parse_patrol.parsers.iodata.__main__",
-    "parse_patrol.databases.nomad.__main__",
-]
+# Import subserver functions directly instead of using importlib
+from .parsers.cclib.__main__ import cclib_parse_file_to_model, cclib_test_prompt
+from .parsers.gaussian.__main__ import gauss_parse_file_to_model, custom_gaussian_test_prompt
+from .parsers.iodata.__main__ import iodata_parse_file_to_model, iodata_test_prompt
+from .databases.nomad.__main__ import search_nomad_entries, get_nomad_raw_files, get_nomad_archive, nomad_materials_prompt
 
-# Tool and prompt function names to register from each module
-REGISTRY = {
-    "parse_patrol.parsers.cclib.__main__": {
-        "tools": ["cclib_parse_file_to_model"],
-        "prompts": ["cclib_test_prompt"],
-    },
-    "parse_patrol.parsers.gaussian.__main__": {
-        "tools": ["gauss_parse_file_to_model"],
-        "prompts": ["custom_gaussian_test_prompt"],
-    },
-    "parse_patrol.parsers.iodata.__main__": {
-        "tools": ["iodata_parse_file_to_model"],
-        "prompts": ["iodata_test_prompt"],
-    },
-    "parse_patrol.databases.nomad.__main__": {
-        "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
-        "prompts": ["nomad_materials_prompt"],
-    },
-}
+# Register all imported functions
+mcp.tool()(cclib_parse_file_to_model)
+mcp.tool()(gauss_parse_file_to_model)
+mcp.tool()(iodata_parse_file_to_model)
+mcp.tool()(search_nomad_entries)
+mcp.tool()(get_nomad_raw_files)
+mcp.tool()(get_nomad_archive)
 
-# Import and register all subserver functions
-for module_name in SUBSERVERS:
-    module = importlib.import_module(module_name)
-    
-    # Register tools
-    for tool_name in REGISTRY[module_name]["tools"]:
-        tool_func = getattr(module, tool_name)
-        mcp.tool()(tool_func)
-    
-    # Register prompts  
-    for prompt_name in REGISTRY[module_name]["prompts"]:
-        prompt_func = getattr(module, prompt_name)
-        mcp.prompt()(prompt_func)
+mcp.prompt()(cclib_test_prompt)
+mcp.prompt()(custom_gaussian_test_prompt)
+mcp.prompt()(iodata_test_prompt)
+mcp.prompt()(nomad_materials_prompt)
+
 
 @mcp.prompt()
 async def parse_patrol_assistant_prompt(
