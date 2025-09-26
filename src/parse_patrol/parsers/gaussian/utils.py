@@ -1,15 +1,16 @@
+"""
+Gaussian file parser utilities - sync version without MCP dependencies.
+
+This module contains the core parsing functionality extracted from the MCP server
+for parsing Gaussian computation files (.log/.out, .gjf/.com, .fchk).
+"""
+
 from pathlib import Path
 from typing import Optional, Dict, List, Any, Tuple
 import re
 
 from pydantic import BaseModel, Field
 import periodictable
-from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
-from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
-
-
-configure_logging("INFO")
-logger = get_logger(__name__)
 
 
 class CustomGaussianDataModel(BaseModel):
@@ -43,9 +44,7 @@ class CustomGaussianDataModel(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-mcp = FastMCP("Custom Gaussian Parser")
-
-
+# Regular expression patterns for parsing Gaussian output
 _float_re = r"[-+]?\d+(?:\.\d*)?(?:[DEde][+-]?\d+)?"
 _re_charge_mult = re.compile(r"Charge\s*=\s*(-?\d+)\s+Multiplicity\s*=\s*(\d+)")
 _re_scf_done = re.compile(r"SCF Done:\s+E\([^\)]+\)\s*=\s*(" + _float_re + r")")
@@ -63,15 +62,15 @@ _re_header = re.compile(r"^[A-Za-z].*\s+[IRL]\s+\d+")
 # Standard orientation block headers in Gaussian logs
 _re_std_orient_header = re.compile(r"^\s*Standard orientation:\s*$")
 _re_orient_divider = re.compile(r"^\s*-{2,}\s*$")
-# Columns: Center  Atomic  Atomic  Coordinates (Angstroms)
-#          Number  Number   Type      X           Y           Z
+
 
 def _safe_float(s: str) -> float:
-    # Gaussian sometimes uses D for exponent
+    """Convert string to float, handling Gaussian's D notation for exponents."""
     return float(s.replace("D", "E").replace("d", "e"))
 
 
 def _parse_last_standard_orientation(lines: List[str]) -> Tuple[Optional[List[int]], Optional[List[List[float]]]]:
+    """Parse the last standard orientation block from Gaussian log file lines."""
     atomnos: List[int] = []
     coords: List[List[float]] = []
 
@@ -127,6 +126,7 @@ def _parse_last_standard_orientation(lines: List[str]) -> Tuple[Optional[List[in
 
 
 def _parse_log_or_out(path: Path) -> CustomGaussianDataModel:
+    """Parse Gaussian log/out file and extract computational results."""
     text = path.read_text(encoding="utf-8", errors="ignore").splitlines()
 
     charge: Optional[int] = None
@@ -246,6 +246,7 @@ def _parse_log_or_out(path: Path) -> CustomGaussianDataModel:
 
 
 def _parse_gjf(path: Path) -> CustomGaussianDataModel:
+    """Parse Gaussian input file (.gjf/.com) and extract job parameters."""
     lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
 
     # Gaussian input format:
@@ -350,6 +351,7 @@ def _parse_gjf(path: Path) -> CustomGaussianDataModel:
 
 
 def _parse_fchk(path: Path) -> CustomGaussianDataModel:
+    """Parse Gaussian formatted checkpoint file (.fchk) and extract basic data."""
     # Minimal extraction: atomic numbers and coordinates if present.
     # Note: Formatted checkpoint keys:
     #  - Atomic numbers: "Atomic numbers"
@@ -421,8 +423,7 @@ def _parse_fchk(path: Path) -> CustomGaussianDataModel:
     )
 
 
-@mcp.tool()
-async def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
+def gaussian_parse(filepath: str) -> CustomGaussianDataModel:
     """
     Parse a Gaussian file (.log/.out, .gjf/.com, .fchk) and return a CustomGaussianDataModel.
 
@@ -437,11 +438,8 @@ async def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
     Returns:
         CustomGaussianDataModel with parsed contents.
     """
-
-    logger.info("Parsing Gaussian file: %s ...", filepath)
     path = Path(filepath)
     if not path.exists():
-        logger.error("File not found: %s", filepath)
         return CustomGaussianDataModel(metadata={"error": f"File not found: {filepath}"})
 
     ext = path.suffix.lower()
@@ -464,33 +462,3 @@ async def gauss_parse_file_to_model(filepath: str) -> CustomGaussianDataModel:
         )
 
     return CustomGaussianDataModel(metadata={"source": str(path), "warning": f"Unrecognized extension: {ext}"})
-
-
-@mcp.prompt()
-async def custom_gaussian_test_prompt(
-    file_description: str, analysis_type: str = "comprehensive analysis"
-) -> str:
-    """Generate a prompt for parsing Gaussian files with custom analysis.
-    
-    Args:
-        file_description: Description of the Gaussian file to be parsed
-        analysis_type: Type of analysis desired (default: comprehensive analysis)
-    
-    Returns:
-        Formatted prompt string for the MCP client
-    """
-    return f"""
-    Use `gauss_parse_file_to_model` to parse the Gaussian file: {file_description}
-
-    Perform {analysis_type} on the parsed data, focusing on:
-    - Molecular geometry and atomic coordinates
-    - SCF energies and convergence
-    - Vibrational frequencies and thermochemistry
-    - Any optimization or transition state information
-
-    Return the data as a CustomGaussianDataModel with detailed analysis.
-    """
-
-
-if __name__ == "__main__":
-    mcp.run()

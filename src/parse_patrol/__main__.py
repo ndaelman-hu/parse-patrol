@@ -11,29 +11,29 @@ mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
 
 # Subserver modules to register
 SUBSERVERS = [
-    "src.cclib.__main__",
-    "src.nomad.__main__",
-    "src.custom_gaussian.__main__",
-    "src.iodata_parser.__main__",
+    "parse_patrol.parsers.cclib.__main__",
+    "parse_patrol.parsers.gaussian.__main__", 
+    "parse_patrol.parsers.iodata.__main__",
+    "parse_patrol.databases.nomad.__main__",
 ]
 
 # Tool and prompt function names to register from each module
 REGISTRY = {
-    "src.cclib.__main__": {
+    "parse_patrol.parsers.cclib.__main__": {
         "tools": ["cclib_parse_file_to_model"],
         "prompts": ["cclib_test_prompt"],
     },
-    "src.nomad.__main__": {
-        "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
-        "prompts": ["nomad_materials_prompt"],
-    },
-    "src.custom_gaussian.__main__": {
+    "parse_patrol.parsers.gaussian.__main__": {
         "tools": ["gauss_parse_file_to_model"],
         "prompts": ["custom_gaussian_test_prompt"],
     },
-    "src.iodata_parser.__main__": {
+    "parse_patrol.parsers.iodata.__main__": {
         "tools": ["iodata_parse_file_to_model"],
         "prompts": ["iodata_test_prompt"],
+    },
+    "parse_patrol.databases.nomad.__main__": {
+        "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
+        "prompts": ["nomad_materials_prompt"],
     },
 }
 

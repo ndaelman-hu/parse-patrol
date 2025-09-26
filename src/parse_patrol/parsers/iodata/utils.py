@@ -1,10 +1,7 @@
 import iodata as iodata_package
-from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-
 from typing import Optional, Dict, List
 from pydantic import BaseModel, Field
 
-mcp = FastMCP("IOData: A python library for reading, writing, and converting computational chemistry file formats and generating input files")
 
 class IODataCubeModel(BaseModel):
     """The volumetric data from a cube (or similar) file."""
@@ -13,6 +10,7 @@ class IODataCubeModel(BaseModel):
     axes: List[List[float]] = Field(description="A (3, 3) array where each row represents the spacing between two neighboring grid points along the first, second and third axis, respectively.")
     data: List[List[List[float]]] = Field(description="A (K, L, M) array of data on a uniform grid.")
     shape: List[int] = Field(description="Shape of the rectangular grid.")
+
 
 class IODataModel(BaseModel):
     """A container class for data loaded from (or to be written to) a file."""
@@ -75,8 +73,8 @@ def iodata_to_model(ext_data: iodata_package.IOData) -> IODataModel:
             result[field_name] = value
     return IODataModel(**result)
 
-@mcp.tool()
-async def iodata_parse_file_to_model(filepath: str) -> IODataModel:
+
+def iodata_parse(filepath: str) -> IODataModel:
     """Parse chemistry file and return as IODataModel for JSON serialization.
     
     Args:
@@ -87,25 +85,3 @@ async def iodata_parse_file_to_model(filepath: str) -> IODataModel:
     """
     data = iodata_package.load_one(filepath)
     return iodata_to_model(data)
-
-@mcp.prompt()
-async def iodata_test_prompt(
-    file_description: str, output_format: str = "a IOData for JSON serialization"
-) -> str:
-    """Generate a prompt for parsing chemistry files using IOData.
-    
-    Args:
-        file_description: Description of the file to be parsed
-        output_format: Desired output format (default: IOData)
-    
-    Returns:
-        Formatted prompt string for the MCP client
-    """
-
-    return (
-        f"Use `iodata_parse_file_to_model` to parse the file (with extension .fck) with description {file_description} "
-        f"and return the data as {output_format}."
-    )
-
-if __name__ == '__main__':
-    mcp.run()
