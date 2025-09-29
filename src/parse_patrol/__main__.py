@@ -8,24 +8,64 @@ from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
 
-# Import subserver functions directly instead of using importlib
-from .parsers.cclib.__main__ import cclib_parse_file_to_model, cclib_test_prompt
-from .parsers.gaussian.__main__ import gauss_parse_file_to_model, custom_gaussian_test_prompt
-from .parsers.iodata.__main__ import iodata_parse_file_to_model, iodata_test_prompt
-from .databases.nomad.__main__ import search_nomad_entries, get_nomad_raw_files, get_nomad_archive, nomad_materials_prompt
+# Configuration for all parsers and databases
+parser_configs = [
+    {
+        "name": "cclib parser",
+        "module": ".parsers.cclib.__main__",
+        "imports": ["cclib_parse_file_to_model", "cclib_test_prompt"],
+        "tools": ["cclib_parse_file_to_model"],
+        "prompts": ["cclib_test_prompt"]
+    },
+    {
+        "name": "gaussian parser", 
+        "module": ".parsers.gaussian.__main__",
+        "imports": ["gauss_parse_file_to_model", "custom_gaussian_test_prompt"],
+        "tools": ["gauss_parse_file_to_model"],
+        "prompts": ["custom_gaussian_test_prompt"]
+    },
+    {
+        "name": "iodata parser",
+        "module": ".parsers.iodata.__main__", 
+        "imports": ["iodata_parse_file_to_model", "iodata_test_prompt"],
+        "tools": ["iodata_parse_file_to_model"],
+        "prompts": ["iodata_test_prompt"]
+    },
+    {
+        "name": "NOMAD database",
+        "module": ".databases.nomad.__main__",
+        "imports": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive", "nomad_materials_prompt"],
+        "tools": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive"],
+        "prompts": ["nomad_materials_prompt"]
+    }
+]
 
-# Register all imported functions
-mcp.tool()(cclib_parse_file_to_model)
-mcp.tool()(gauss_parse_file_to_model)
-mcp.tool()(iodata_parse_file_to_model)
-mcp.tool()(search_nomad_entries)
-mcp.tool()(get_nomad_raw_files)
-mcp.tool()(get_nomad_archive)
+# Dynamically import and register available parsers
+def register_parsers():
+    """Register all available parser tools and prompts."""
 
-mcp.prompt()(cclib_test_prompt)
-mcp.prompt()(custom_gaussian_test_prompt)
-mcp.prompt()(iodata_test_prompt)
-mcp.prompt()(nomad_materials_prompt)
+    for config in parser_configs:
+        try:
+            # Dynamic import from module
+            from importlib import import_module
+            module = import_module(config["module"], package=__package__)
+            
+            # Register tools
+            for tool_name in config["tools"]:
+                tool_func = getattr(module, tool_name)
+                mcp.tool()(tool_func)
+            
+            # Register prompts  
+            for prompt_name in config["prompts"]:
+                prompt_func = getattr(module, prompt_name)
+                mcp.prompt()(prompt_func)
+            
+            print(f"✓ Registered {config['name']}")
+            
+        except ImportError as e:
+            print(f"⚠ {config['name']} not available: {e}")
+        except AttributeError as e:
+            print(f"⚠ {config['name']} missing expected functions: {e}")
 
 
 @mcp.prompt()
@@ -66,7 +106,7 @@ async def cleanup_corrupted_files_prompt() -> str:
         Formatted prompt string for file cleanup
     """
 
-    return f"""
+    return """
     You are helping me clean up corrupted computational chemistry files.
     
     1. Check the folders in `.data` with the various parsing tools.
@@ -120,5 +160,6 @@ async def parse_patrol_parser_pipeline_prompt(
     )
 
 
+register_parsers()
 if __name__ == "__main__":
     mcp.run()
