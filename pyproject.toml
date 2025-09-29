@@ -56,8 +56,8 @@ all = [
 [project.scripts]
 parse-patrol-mcp = "parse_patrol.__main__:mcp.run"
 
-[tool.hatch.build]
-packages = ["src"]
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
 
 [build-system]
 requires = ["hatchling"]
