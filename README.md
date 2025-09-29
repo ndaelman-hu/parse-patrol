@@ -33,6 +33,28 @@ gauss_data = gaussian_parse("gaussian.out")
 iodata_result = iodata_parse("structure.xyz")
 ```
 
+## 🎯 **Adaptive Tool Availability**
+
+Both modes automatically adapt to your local installation - **you only get tools for packages you've installed**:
+
+```bash
+# Lightweight: Only cclib tools available
+uv sync --extra mcp --extra cclib
+→ MCP exposes: cclib_parse_file_to_model only
+→ Direct import: from parse_patrol import cclib_parse
+
+# Full installation: All tools available  
+uv sync --extra all
+→ MCP exposes: all parsers + NOMAD database tools
+→ Direct import: all parsers available
+
+# Check what's available at runtime
+from parse_patrol import available_parsers
+print(available_parsers())  # ['cclib', 'gaussian', 'iodata']
+```
+
+This means the same codebase works across different deployment scenarios - from lightweight containers to full research environments.
+
 ### Available Tools
 
 **Parser Tools** (both MCP + direct import):
