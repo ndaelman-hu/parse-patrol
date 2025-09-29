@@ -1,12 +1,12 @@
 [project]
-name = "parse_patrol"
+name = "parse-patrol"
 version = "0.1.0"
 description = "Dual-mode chemistry parsing package: MCP discovery + direct Python imports for computational chemistry analysis"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "pydantic>=2.11.7", 
-    "requests>=2.31",
+    "pydantic", 
+    "requests",
 ]
 
 [project.optional-dependencies]
@@ -26,15 +26,15 @@ nomad = [
 
 # Parser groups
 parsers = [
-    "parse_patrol[cclib,gaussian,iodata]"
+    "parse-patrol[cclib,gaussian,iodata]"
 ]
 databases = [
-    "parse_patrol[nomad]"
+    "parse-patrol[nomad]"
 ]
 
 # MCP server functionality
 mcp = [
-    "mcp[cli]>=1.13.1",
+    "mcp[cli]",
 ]
 
 # Development tools
@@ -47,10 +47,10 @@ dev = [
 
 # Convenience groups
 all-parsers = [
-    "parse_patrol[parsers,mcp]"
+    "parse-patrol[parsers,mcp]"
 ]
 all = [
-    "parse_patrol[parsers,databases,mcp,dev]"
+    "parse-patrol[parsers,databases,mcp,dev]"
 ]
 
 [project.scripts]
