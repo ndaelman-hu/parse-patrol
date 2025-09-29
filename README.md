@@ -270,7 +270,20 @@ The test suite includes:
 - **Runtime Import Tests**: Validates that parsers work with their dependencies (gracefully skips if dependencies missing)
 - **Minimal Dependency Tests**: Tests core MCP functionality without optional parser dependencies
 
-#### 2. Agent Pipeline Testing
+#### 2. Continuous Integration
+GitHub Actions automatically runs tests on all pushes and pull requests:
+
+- **Multi-Python Testing**: Tests run on Python 3.9, 3.10, 3.11, and 3.12
+- **Code Quality**: Linting with ruff and optional type checking with mypy
+- **Coverage Reporting**: Test coverage is tracked and reported via Codecov
+
+The CI ensures that:
+- All tests pass across supported Python versions
+- Code follows consistent formatting and style
+- Dependencies install correctly with `uv`
+- Both minimal and full installation scenarios work
+
+#### 3. Agent Pipeline Testing
 Test end-to-end workflows:
 
 - The agent attempts to generate pipeline scripts using the MCP tools
