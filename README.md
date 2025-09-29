@@ -245,10 +245,38 @@ Once the servers passes the checks, register the new MCP server:
 - to unified interface in `src/parse_patrol/`. **Only the central interface is exposed in `main` branch!** This allows agents and users to access all parsing tools via a single, clear server endpoint.
 - in this `README.md`, if this is a new tool.
 
-Testing is done 2 ways:
+### Testing
 
-- the agent attempts to generate pipeline scripts. Successful cases may be stored under in `.pipelines/scripts/`. The input to be processed is found in `.pipelines/data/`. Schema definitions and documentation resources are available in `.resources/`.
-- test the parser and server code in `tests/`.
+Testing is done in multiple ways to ensure both functionality and MCP server behavior:
+
+#### 1. Automated Unit Tests
+Run the comprehensive test suite using pytest:
+
+```bash
+# Run all tests with verbose output
+uv run python -m pytest tests/ -v
+
+# Run specific test file
+uv run python -m pytest tests/test_modular_mcp.py -v
+
+# Run tests with coverage (if coverage is installed)
+uv run python -m pytest tests/ --cov=parse_patrol
+```
+
+The test suite includes:
+
+- **MCP Server Initialization**: Tests that the unified MCP server loads correctly
+- **Parser Configuration**: Parametrized tests ensuring each parser has proper configuration
+- **Runtime Import Tests**: Validates that parsers work with their dependencies (gracefully skips if dependencies missing)
+- **Minimal Dependency Tests**: Tests core MCP functionality without optional parser dependencies
+
+#### 2. Agent Pipeline Testing
+Test end-to-end workflows:
+
+- The agent attempts to generate pipeline scripts using the MCP tools
+- Successful cases are stored in `.pipelines/scripts/`
+- Input data for processing is found in `.pipelines/data/`
+- Schema definitions and documentation resources are available in `.resources/`
 
 ## Online Resources
 
