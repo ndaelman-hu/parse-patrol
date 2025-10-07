@@ -23,6 +23,14 @@ iodata_result = iodata_parse("data.xyz")
 Note: Database tools (NOMAD) are only available via MCP for discovery/experimentation.
 """
 
+import warnings
+
+# Suppress known warnings from dependencies
+warnings.filterwarnings("ignore", 
+                       message=r"invalid escape sequence.*", 
+                       category=SyntaxWarning,
+                       module="cclib.*")
+
 # Import parser functions only (not database tools)
 # Handle optional dependencies gracefully
 __version__ = "0.1.0"
