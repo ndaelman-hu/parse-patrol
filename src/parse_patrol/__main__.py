@@ -71,15 +71,18 @@ def register_parsers():
 @mcp.resource('parse-patrol://code_usage')
 def call_tools_as_code_dependencies():
     return """
-    ## Direct Import Mode  
-    Developers can install the package and import parser functions directly:
+    ## Direct Import Mode
+    This server is dual-mode: it can be used via MCP for LLM discovery/experimentation,
+    or developers can import parser functions directly in their own code.
+    Any tools registered with MCP are thus also available for direct import.
+
+    Developers can install the package and import parser functions directly via:
 
     ```python
-    from parse_patrol import cclib_parse, gaussian_parse, iodata_parse
+    from parse_patrol import cclib_parse, iodata_parse
 
     # Parse chemistry files directly
     cclib_result = cclib_parse("output.log")
-    gaussian_result = gaussian_parse("calculation.out") 
     iodata_result = iodata_parse("data.xyz")
     ```
 
