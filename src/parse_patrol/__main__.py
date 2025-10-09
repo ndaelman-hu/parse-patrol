@@ -68,6 +68,25 @@ def register_parsers():
             print(f"⚠ {config['name']} missing expected functions: {e}")
 
 
+@mcp.resource('parse-patrol://code_usage')
+def call_tools_as_code_dependencies():
+    return """
+    ## Direct Import Mode  
+    Developers can install the package and import parser functions directly:
+
+    ```python
+    from parse_patrol import cclib_parse, gaussian_parse, iodata_parse
+
+    # Parse chemistry files directly
+    cclib_result = cclib_parse("output.log")
+    gaussian_result = gaussian_parse("calculation.out") 
+    iodata_result = iodata_parse("data.xyz")
+    ```
+
+    Note: Database tools (NOMAD) are only available via MCP for discovery/experimentation.
+    """
+
+
 @mcp.prompt()
 async def parse_patrol_assistant_prompt(
     task_description: str, preferred_tools: str = "any available parsers"
