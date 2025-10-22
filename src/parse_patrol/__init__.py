@@ -34,12 +34,10 @@ _available_parsers = []
 for module_path, func_name, model_name, parser_name in PARSERS:
     try:
         module = __import__(f"parse_patrol{module_path}", fromlist=[func_name, model_name])
-        func = getattr(module, func_name)
-        model = getattr(module, model_name)
         
         # Add to globals and __all__
-        globals()[func_name] = func
-        globals()[model_name] = model
+        globals()[func_name] = getattr(module, func_name)
+        globals()[model_name] = getattr(module, model_name)
         __all__.extend([func_name, model_name])
         _available_parsers.append(parser_name)
     except ImportError:

@@ -7,6 +7,7 @@ Collects and exposes all tools from subservers.
 from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
 
 mcp = FastMCP("Parse Patrol - Unified Chemistry Parser")
+RESOURCE_PREFIX = "parse-patrol://"
 
 # Configuration for all parsers and databases
 parser_configs = [
@@ -15,6 +16,7 @@ parser_configs = [
         "module": ".parsers.cclib.__main__",
         "imports": ["cclib_parse_file_to_model", "cclib_test_prompt"],
         "tools": ["cclib_parse_file_to_model"],
+        "resources": ["cclib_documentation"],
         "prompts": ["cclib_test_prompt"]
     },
     {
@@ -29,6 +31,7 @@ parser_configs = [
         "module": ".parsers.iodata.__main__", 
         "imports": ["iodata_parse_file_to_model", "iodata_test_prompt"],
         "tools": ["iodata_parse_file_to_model"],
+        "resources": ["iodata_documentation"],
         "prompts": ["iodata_test_prompt"]
     },
     {
@@ -51,12 +54,17 @@ def register_parsers():
             module = import_module(config["module"], package=__package__)
             
             # Register tools
-            for tool_name in config["tools"]:
+            for tool_name in getattr(config, "tools", []):
                 tool_func = getattr(module, tool_name)
                 mcp.tool()(tool_func)
-            
-            # Register prompts  
-            for prompt_name in config["prompts"]:
+
+            # Register resources
+            for resource_name in getattr(config, "resources", []):
+                resource_func = getattr(module, resource_name)
+                mcp.resource(f"{RESOURCE_PREFIX}{resource_name.replace('_', '/')}")(resource_func)
+
+            # Register prompts
+            for prompt_name in getattr(config, "prompts", []):
                 prompt_func = getattr(module, prompt_name)
                 mcp.prompt()(prompt_func)
             
@@ -68,10 +76,9 @@ def register_parsers():
             print(f"⚠ {config['name']} missing expected functions: {e}")
 
 
-@mcp.resource('parse-patrol://code_usage')
+@mcp.resource(f'{RESOURCE_PREFIX}code_usage')
 def call_tools_as_code_dependencies():
     return """
-    ## Direct Import Mode
     This server is dual-mode: it can be used via MCP for LLM discovery/experimentation,
     or developers can import parser functions directly in their own code.
     Any tools registered with MCP are thus also available for direct import.
