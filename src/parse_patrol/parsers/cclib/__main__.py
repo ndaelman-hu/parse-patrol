@@ -100,13 +100,17 @@ async def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
     
     Returns:
         CCDataModel with parsed data converted for JSON serialization
+        
+    Raises:
+        FileNotFoundError: If file cannot be opened or is an unsupported format
+        ValueError: If file parsing fails
     """
     logger.info("Parsing file: %s ...", filepath)
     try:
         return cclib_parse(filepath)
     except (FileNotFoundError, ValueError) as e:
         logger.error("Failed to parse file: %s", e)
-        return CCDataModel()
+        raise  # Re-raise the exception to be handled by MCP error handling
 
 
 @mcp.prompt()
