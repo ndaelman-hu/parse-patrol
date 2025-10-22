@@ -5,13 +5,18 @@ This module provides sync functions that can be imported and used directly.
 
 import cclib
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 
 class CCDataModel(BaseModel):
     """Pydantic model for CCLib parsed data."""
     class Config:
         validate_assignment = True
+    
+    # Format and metadata information
+    source_format: Optional[str] = Field(None, description="Detected file format/software (e.g., 'gaussian', 'orca', 'qchem')")
+    source_version: Optional[str] = Field(None, description="Software version if detected (e.g., 'Gaussian 16', 'ORCA 5.0')")
+    file_extension: Optional[str] = Field(None, description="Original file extension (e.g., '.log', '.out', '.fchk')")
     
     aonames: Optional[List[str]] = Field(None, description="Atomic orbital names (list of strings)")
     aooverlaps: Optional[List] = Field(None, description="Atomic orbital overlap matrix (array of rank 2)")
@@ -71,7 +76,7 @@ class CCDataModel(BaseModel):
     scanenergies: Optional[List] = Field(None, description="Energies of potential energy surface (list)")
     scannames: Optional[List[str]] = Field(None, description="Names of variables scanned (list of strings)")
     scanparm: Optional[List] = Field(None, description="Values of parameters in potential energy surface (list of tuples)")
-    scfenergies: Optional[List] = Field(None, description="Molecular electronic energies after SCF (Hartree-Fock, DFT) (eV, array of rank 1)")
+    scfenergies: Optional[List] = Field(None, description="Molecular electronic energies after SCF (Hartree-Fock, DFT) (eV, array of rank 1). Available from all QM software output files (.log, .out, .fchk)")
     scftargets: Optional[List] = Field(None, description="Targets for convergence of the SCF (array of rank 2)")
     scfvalues: Optional[List] = Field(None, description="Current values for convergence of the SCF (list of arrays of rank 2)")
     temperature: Optional[float] = Field(None, description="Temperature used for Thermochemistry (kelvin, float)")
@@ -88,17 +93,34 @@ class CCDataModel(BaseModel):
     zpve: Optional[float] = Field(None, description="Zero-point vibrational energy correction (hartree/particle, float)")
 
 
-def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: ignore
+def ccdata_to_model(ccdata: cclib.parser.data.ccData, filepath: str = None) -> CCDataModel:  # type: ignore
     """Convert ccData object to CCDataModel (Pydantic) format.
     
     Args:
         ccdata: Parsed ccData object from cclib
+        filepath: Original filepath for metadata extraction
     
     Returns:
         CCDataModel with converted data types for JSON serialization
     """
     result = {}
+    
+    # Add format metadata if available
+    if filepath:
+        import os
+        result['file_extension'] = os.path.splitext(filepath)[1] if '.' in os.path.basename(filepath) else None
+    
+    # Extract software information from metadata if available
+    if hasattr(ccdata, 'metadata') and ccdata.metadata:
+        package_info = ccdata.metadata.get('package', '')
+        if package_info:
+            result['source_format'] = package_info.lower()
+            result['source_version'] = ccdata.metadata.get('package_version', '')
+    
     for field_name in CCDataModel.model_fields.keys():
+        if field_name in ['source_format', 'source_version', 'file_extension']:
+            continue  # Already handled above
+            
         if hasattr(ccdata, field_name):
             value = getattr(ccdata, field_name)
             if value is None:
@@ -137,6 +159,6 @@ def cclib_parse(filepath: str) -> CCDataModel:
     if ccdata is None:
         raise ValueError(f"Failed to parse file: {filepath}")
         
-    return ccdata_to_model(ccdata)
+    return ccdata_to_model(ccdata, filepath)
 
 
