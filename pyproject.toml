@@ -59,6 +59,26 @@ parse-patrol-mcp = "parse_patrol.__main__:mcp.run"
 [tool.hatch.build.targets.wheel]
 sources = ["src"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (may require network access)",
+    "slow: marks tests as slow (may download large files)",
+    "unit: marks tests as fast unit tests",
+]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
