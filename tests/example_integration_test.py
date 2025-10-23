@@ -144,7 +144,7 @@ def test_simple_download_and_parse():
         # Clean up
         try:
             import shutil
-            data_dir = Path(".data")
+            data_dir = Path("tests/.data")
             if data_dir.exists():
                 shutil.rmtree(data_dir)
                 print("   🧹 Cleaned up downloaded files")

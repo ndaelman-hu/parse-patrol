@@ -178,17 +178,18 @@ def nomad_search_entries(
         raise Exception(f"Failed to query NOMAD API: {str(e)}")
 
 
-def nomad_get_raw_files(entry_id: str) -> str:
-    """Download and extract NOMAD raw files to .data directory.
+def nomad_get_raw_files(entry_id: str, data_root: str='tests/.data') -> str:
+    """Download and extract NOMAD raw files.
 
     Args:
         entry_id: NOMAD entry ID
+        data_root: Optional root directory for downloads. Defaults to tests/.data if not specified.
 
     Returns:
         Path to extracted files directory
     """
     # Create entry-specific directory
-    data_dir = Path(".data") / entry_id
+    data_dir = Path(data_root) / entry_id
     data_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if files already downloaded

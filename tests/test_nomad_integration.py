@@ -90,7 +90,7 @@ class NOMADTestManager:
                 shutil.rmtree(self.temp_dir)
             
             # Also clean up .data directory entries we created
-            data_dir = Path(".data")
+            data_dir = Path("tests/.data")
             if data_dir.exists():
                 for entry_id in self.downloaded_entries:
                     entry_path = data_dir / entry_id
