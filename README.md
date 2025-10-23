@@ -22,12 +22,13 @@ More specifically, when asked to script a parser, agents often produce them from
 Herein, they rely on (potentially outdated) knowledge or on-the-fly research about crucial aspects like the input format specifications.
 Hence, this process leads to a prolonged test cycles where the final results may vary in quality.
 
-With dual-mode, the same infrastructure is used in testing and scripting, enabling a _try before you buy_ workflow for AI tools.
+With dual-mode, the same infrastructure is used in testing and scripting, enabling a *try before you buy* workflow for AI tools.
 The community parsers can now act both as tools presented via the MCP protocol, or as plain code dependencies.
 As a developer, you can casually brainstorm and test various parsers with your AI, before settling on a design for your high-volume script.
 All MCP tools come with documentation that explains (to any client agent) how to both execute them and call them for usage within an autonomously written piece of code.
 
 Watch our overviews [![demo](https://img.youtube.com/vi/fSAyi5ubkR0/0.jpg)](https://youtu.be/fSAyi5ubkR0) on YouTube.
+
 ### **MCP Discovery Mode**
 
 Agents can discover and experiment with tools through MCP protocol:
@@ -92,6 +93,7 @@ Potential development routes -aside from extending tooling- include:
 ### Prerequisites
 
 This project uses `uv` for Python package management. If you don't have it installed:
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -204,15 +206,15 @@ For running or adding tests, as well as contributing to the official repository,
 
 ## Online Resources
 
-The following links explain the basics of MCP, including the distinction between _tools_, _resources_, and _prompts_. **Make sure to respect these distinctions!**
+The following links explain the basics of MCP, including the distinction between *tools*, *resources*, and *prompts*. **Make sure to respect these distinctions!**
 
 - Basics
-  - Full repo and README of the MCP Python SDK: https://github.com/modelcontextprotocol/python-sdk
-  - The FastMCP package docs: https://gofastmcp.com
+  - Full repo and README of the MCP Python SDK: <https://github.com/modelcontextprotocol/python-sdk>
+  - The FastMCP package docs: <https://gofastmcp.com>
 - Advanced
-  - JSON-RPC: foundational protocol that formalizes MCP server-client communication. It is transport-layer agnostic: https://www.jsonrpc.org/specification
+  - JSON-RPC: foundational protocol that formalizes MCP server-client communication. It is transport-layer agnostic: <https://www.jsonrpc.org/specification>
 - VS Code
-  - detailed MCP server setup and management: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+  - detailed MCP server setup and management: <https://code.visualstudio.com/docs/copilot/customization/mcp-servers>
 - cclib
-  - Docs explaining the supported fields and codes: https://cclib.github.io/data.html
-  - Repo for in-depth navigation of the code: https://github.com/cclib
+  - Docs explaining the supported fields and codes: <https://cclib.github.io/data.html>
+  - Repo for in-depth navigation of the code: <https://github.com/cclib>
