@@ -5,6 +5,7 @@ from typing import Optional, Dict, List, Any
 from .utils import (
     NOMADEntry,
     NOMADAction,
+    FormulaType,
     nomad_search_entries,
     nomad_get_raw_files,
     nomad_get_archive,
@@ -19,6 +20,7 @@ mcp = FastMCP("NOMAD Central Materials Database")
 @mcp.tool()
 async def search_nomad_entries(
     formula: Optional[str] = None,
+    formula_type: FormulaType = FormulaType.reduced,
     program_name: Optional[str] = None,
     start: int = 1,
     end: int = 10,
@@ -29,6 +31,7 @@ async def search_nomad_entries(
 
     Args:
         formula: Chemical formula (e.g., "Si2O4", "C6H6")
+        formula_type: Type of chemical formula to search (default: reduced)
         program_name: Computational program (e.g., "Gaussian", "ORCA")
         start: Starting entry number (1-based, default: 1)
         end: Ending entry number (1-based, default: 10)
@@ -38,12 +41,13 @@ async def search_nomad_entries(
     Returns:
         List of NOMADEntry objects matching the search criteria
     """
-    logger.info(f"Searching NOMAD entries: formula={formula}, program={program_name}, range={start}-{end}")
+    logger.info(f"Searching NOMAD entries: formula={formula}, formula_type={formula_type.name}, program={program_name}, range={start}-{end}")
     
     try:
         entries = await asyncio.to_thread(
             nomad_search_entries,
             formula=formula,
+            formula_type=formula_type,
             program_name=program_name,
             start=start,
             end=end,
@@ -123,12 +127,18 @@ async def nomad_materials_prompt(
         Search the NOMAD materials database for: {search_query}
 
         Use `search_nomad_entries` with appropriate parameters to find up to {max_entries} relevant computational entries. Focus on:
-        - Chemical formula matching
+        - Chemical formula matching (supports reduced, hill, anonymous, descriptive formats)
         - Computational method information  
         - Program versions and metadata
         - Recent high-quality calculations
 
-        Return a list of NOMADEntry objects with detailed metadata.
+        Formula type options:
+        - reduced (default): simplified chemical formula
+        - hill: Hill notation (C, H, then alphabetical)
+        - anonymous: anonymized formula representation
+        - descriptive: human-readable chemical names
+
+        Return a list of NOMADEntry objects with detailed metadata including formula_type.
         """
     
     elif action == NOMADAction.download:

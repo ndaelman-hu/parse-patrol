@@ -13,6 +13,14 @@ class NOMADAction(str, Enum):
     search_and_download = "search_and_download"
 
 
+class FormulaType(str, Enum):
+    """NOMAD supported chemical formula types."""
+    reduced = "chemical_formula_reduced"
+    hill = "chemical_formula_hill"
+    anonymous = "chemical_formula_anonymous"
+    descriptive = "chemical_formula_descriptive"
+
+
 class EntryRange(BaseModel):
     start: int = Field(..., ge=1, description="Starting entry number (1-based)")
     end: int = Field(..., ge=1, description="Ending entry number (1-based)")
@@ -37,6 +45,7 @@ class NOMADEntry(BaseModel):
     entry_id: str = Field(..., description="NOMAD entry ID")
     upload_id: Optional[str] = Field(None, description="NOMAD upload ID")
     formula: Optional[str] = Field(None, description="Chemical formula")
+    formula_type: FormulaType = Field(..., description="Type of chemical formula representation")
     program_name: Optional[str] = Field(
         None, description="Computational program used (VASP, Gaussian, etc.)"
     )
@@ -76,6 +85,7 @@ def _parse_date_to_timestamp(date_str: str, end_of_day: bool = False) -> Optiona
 
 def nomad_search_entries(
     formula: Optional[str] = None,
+    formula_type: FormulaType = FormulaType.reduced,
     program_name: Optional[str] = None,
     start: int = 1,
     end: int = 10,
@@ -86,6 +96,7 @@ def nomad_search_entries(
 
     Args:
         formula: Chemical formula (e.g., "Si2O4", "C6H6")
+        formula_type: Type of chemical formula to search (default: reduced)
         program_name: Computational program (e.g., "Gaussian", "ORCA")
         start: Starting entry number (1-based, default: 1)
         end: Ending entry number (1-based, default: 10)
@@ -117,7 +128,7 @@ def nomad_search_entries(
 
     # Add search filters
     if formula:
-        query_body["query"]["results.material.chemical_formula_reduced:any"] = [formula]
+        query_body["query"][f"results.material.{formula_type.value}:any"] = [formula]
     if program_name:
         query_body["query"]["results.method.simulation.program_name:any"] = [
             program_name
@@ -161,7 +172,8 @@ def nomad_search_entries(
                 upload_id=item.get("upload_id"),
                 formula=item.get("results", {})
                 .get("material", {})
-                .get("chemical_formula_reduced"),
+                .get(formula_type.value),
+                formula_type=formula_type,
                 program_name=item.get("results", {})
                 .get("method", {})
                 .get("simulation", {})

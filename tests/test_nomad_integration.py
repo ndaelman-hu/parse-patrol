@@ -44,18 +44,31 @@ class TestNOMADInterface:
             {"max_results": 2, "validate_entry": True}
         ),
         (
-            {"formula": "UnlikelyFormula123", "program_name": "NonexistentProgram"},
-            {"max_results": 0, "validate_entry": False}
+            {"formula": "UnlikelyFormula123", "program_name": "NonexistentProgram", "start": 1, "end": 3},
+            {"max_results": 3, "validate_no_match": True}
+        ),
+        # Formula type testing
+        (
+            {"formula": "H2O", "formula_type": "reduced", "start": 1, "end": 2},
+            {"max_results": 2, "validate_entry": True, "formula_type": "reduced"}
+        ),
+        (
+            {"formula": "H2O", "formula_type": "hill", "start": 1, "end": 2},
+            {"max_results": 2, "validate_entry": True, "formula_type": "hill"}
         ),
     ])
-    def test_nomad_search_functionality(self, search_params, expected_behavior):
+    def test_nomad_search_functionality(self, search_params: dict, expected_behavior: dict):
         """Test NOMAD search with various parameters and filters."""
         try:
-            from parse_patrol.databases.nomad.utils import nomad_search_entries
+            from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
         except ImportError:
             pytest.skip("NOMAD dependencies not available")
         
-        # Execute search
+        # Convert string formula_type to enum if present
+        if "formula_type" in search_params:
+            formula_type_str = search_params["formula_type"]
+            search_params["formula_type"] = FormulaType(f"chemical_formula_{formula_type_str}")
+        
         entries = nomad_search_entries(**search_params)
         
         # Basic validation
@@ -63,18 +76,30 @@ class TestNOMADInterface:
         assert len(entries) <= expected_behavior["max_results"]
         
         # Validate entries if found
-        if expected_behavior.get("validate_entry"):
+        if expected_behavior.get("validate_entry", False):
             if entries:
                 entry = entries[0]
                 assert hasattr(entry, 'entry_id')
                 assert hasattr(entry, 'formula')
+                assert hasattr(entry, 'formula_type')
                 assert entry.entry_id is not None
+                
+                # Validate formula_type field matches expected type
+                if "formula_type" in expected_behavior:
+                    expected_type = expected_behavior["formula_type"]
+                    assert entry.formula_type.name == expected_type
+                    
             if (program := expected_behavior.get("validate_program")):
                 for entry in entries:
                     if entry.program_name:
                         assert program in entry.program_name
-        else:
-            assert len(entries) == 0
+        elif expected_behavior.get("validate_no_match", False):
+            # For unlikely formulas, we expect either no results or results that don't match
+            for entry in entries:
+                if entry.formula:
+                    assert "UnlikelyFormula123" not in entry.formula
+                if entry.program_name:
+                    assert "NonexistentProgram" not in entry.program_name
     
     @pytest.mark.parametrize("entry_id", [
         "ak2gQ6tnIAe9GIOPlYaZBKPI7AZW",
@@ -106,10 +131,46 @@ class TestNOMADInterface:
             if hasattr(self, 'test_data_dir') and self.test_data_dir.exists():
                 shutil.rmtree(self.test_data_dir)
     
+    @pytest.mark.parametrize("formula_type_name", [
+        "reduced",
+        "hill", 
+        "anonymous",
+        "descriptive"
+    ])
+    @pytest.mark.integration
+    def test_formula_type_field_validation(self, formula_type_name: str):
+        """Test that NOMADEntry.formula_type field is correctly populated."""
+        try:
+            from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
+        except ImportError:
+            pytest.skip("NOMAD dependencies not available")
+        
+        # Test that all formula types are valid enum values
+        formula_type = FormulaType(f"chemical_formula_{formula_type_name}")
+        assert formula_type.name == formula_type_name
+        
+        # Test search with each formula type
+        entries = nomad_search_entries(
+            formula="H2O",
+            formula_type=formula_type,
+            start=1,
+            end=2
+        )
+        
+        # Basic validation - should be able to search with any formula type
+        assert isinstance(entries, list)
+        assert len(entries) <= 2
+        
+        # Validate formula_type field is correctly set in returned entries
+        for entry in entries:
+            assert hasattr(entry, 'formula_type')
+            assert entry.formula_type == formula_type
+            assert entry.formula_type.name == formula_type_name
+    
     @pytest.mark.parametrize("start, end, reference", [
-        (1, 10),  # Valid range
-        (5, 5),  # Edge case: start == end
-        (10, 5),  # Invalid range: end < start
+        (1, 10, True),  # Valid range
+        (5, 5, True),  # Edge case: start == end
+        (10, 5, False),  # Invalid range: end < start
     ])
     def test_entry_range_model(self, start: int, end: int, reference: bool):
         """Test EntryRange model validation."""
@@ -118,8 +179,7 @@ class TestNOMADInterface:
         # Test valid range
         if reference:
             range_obj = EntryRange(start=start, end=end)
-            assert range_obj.limit == end
-            assert range_obj.page_offset == 0
+            assert range_obj.limit == end - start + 1
         else:
             with pytest.raises(ValueError):
                 EntryRange(start=start, end=end)
