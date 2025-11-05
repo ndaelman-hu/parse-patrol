@@ -87,6 +87,9 @@ def iodata_to_model(ext_data: iodata_package.IOData, filepath: Optional[str] = N
         elif 'orca' in filepath.lower():
             result['detected_software'] = 'ORCA'
             result['source_format'] = 'orca'
+        else:
+            result['detected_software'] = None
+            result['source_format'] = None
     
     for field_name in IODataModel.model_fields.keys():
         if field_name in ['source_format', 'source_extension', 'detected_software']:
