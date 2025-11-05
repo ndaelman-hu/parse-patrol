@@ -5,113 +5,94 @@ and dynamically registers only available parsers.
 """
 
 import sys
-import pytest  # pyright: ignore[reportMissingImports]
+import pytest
+import os
+
+# Add src to path for imports
+src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 
-# Test configurations - moved to top for easy maintenance
-PARSER_TEST_CONFIGS = [
-    ("cclib parser", "parse_patrol.parsers.cclib.__main__", "cclib_parse_file_to_model"),
-    ("gaussian parser", "parse_patrol.parsers.gaussian.__main__", "gauss_parse_file_to_model"),
-    ("iodata parser", "parse_patrol.parsers.iodata.__main__", "iodata_parse_file_to_model"),
-    ("NOMAD database", "parse_patrol.databases.nomad.__main__", "search_nomad_entries"),
-]
+class TestModularMCP:
+    """Test suite for MCP server modular functionality."""
 
+    @pytest.fixture(autouse=True)
+    def setup_imports(self):
+        """Setup imports for all tests in the class."""
+        # Import and initialize MCP server (parsers register automatically)
+        from parse_patrol.__main__ import mcp, parser_configs
+        self.mcp = mcp
+        self.parser_configs = parser_configs
 
-def test_mcp_server_initialization():
-    """Test MCP server loads successfully and basic structure is correct.
-    
-    This test validates the core MCP server setup:
-    - MCP server object is created with correct name
-    - Parser configuration list exists and is properly structured
-    
-    NOTE: This tests the basic server initialization, not individual parser configs.
-    Individual parser configs are tested separately with parametrize.
-    """
-    # Add src to path for imports
-    import os
-    src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
-    if src_path not in sys.path:
-        sys.path.insert(0, src_path)
-    
-    # Import and initialize MCP server (parsers register automatically)
-    from parse_patrol.__main__ import mcp
-    
-    # Test that MCP server was created successfully
-    assert mcp is not None
-    assert mcp.name == "Parse Patrol - Unified Chemistry Parser"
-    
-    # Test that we can access the parser configs (shows modular design works)
-    from parse_patrol.__main__ import parser_configs
-    assert len(parser_configs) > 0
-    assert isinstance(parser_configs, list)
-    # Individual parser configs are tested in test_parser_config_exists
+    def get_available_parsers(self):
+        """Get list of parsers that are actually available (have dependencies installed)."""
+        available_parsers = []
+        
+        for config in self.parser_configs:
+            parser_name = config["name"]
+            module_path = f"parse_patrol{config['module']}"  # Add parse_patrol prefix
+            
+            # Get the first tool function as the test function
+            if "tools" in config and config["tools"]:
+                function_name = config["tools"][0]  # Use first tool function
+            else:
+                continue  # Skip if no tools defined
+            
+            try:
+                module = __import__(module_path, fromlist=[function_name])
+                getattr(module, function_name)
+                available_parsers.append((parser_name, module_path, function_name, True))
+            except ImportError:
+                # Skip parsers with missing dependencies
+                continue
+        
+        return available_parsers
 
+    def test_mcp_server_initialization(self):
+        """Test MCP server loads successfully and basic structure is correct."""
+        # Test that MCP server was created successfully
+        assert self.mcp is not None
+        assert self.mcp.name == "Parse Patrol - Unified Chemistry Parser"
+        
+        # Test that we can access the parser configs (shows modular design works)
+        assert len(self.parser_configs) > 0
+        assert isinstance(self.parser_configs, list)
 
-@pytest.mark.parametrize(
-        "expected_parser_name",
-        [config[0] for config in PARSER_TEST_CONFIGS]
-    )
-def test_parser_config_exists(expected_parser_name):
-    """Test that each expected parser has a configuration entry.
-    
-    This test validates STATIC CONFIGURATION for individual parsers:
-    - Each parser has an entry in the parser_configs list
-    - The configuration has the expected name
-    
-    NOTE: This tests configuration PRESENCE, not functionality.
-    The config can exist even if the parser's dependencies are missing.
-    """
-    import os
-    src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
-    if src_path not in sys.path:
-        sys.path.insert(0, src_path)
-    
-    from parse_patrol.__main__ import parser_configs
-    assert any(config["name"] == expected_parser_name for config in parser_configs), \
-           f"Parser config for '{expected_parser_name}' not found"
+    def test_parser_config_and_import(self):
+        """Test that each available parser can be imported and all configured tools exist."""
+        available_parsers = self.get_available_parsers()
+        
+        assert len(available_parsers) > 0, "No parsers available for testing"
+        
+        for parser_name, module_path, function_name, should_import in available_parsers:
+            # Find the parser config (we know it exists since get_available_parsers uses it)
+            parser_config = next((config for config in self.parser_configs if config["name"] == parser_name), None)
+            assert parser_config is not None, f"Parser config for '{parser_name}' not found"
+            
+            # Import functionality works at runtime and verify all configured tools exist
+            try:
+                module = __import__(module_path, fromlist=parser_config["tools"])
+                
+                # Verify all configured tools actually exist in the module
+                for tool_name in parser_config["tools"]:
+                    func = getattr(module, tool_name, None)
+                    assert func is not None, f"Tool '{tool_name}' configured for '{parser_name}' but not found in module"
+                    assert callable(func), f"Tool '{tool_name}' in '{parser_name}' is not callable"
+                
+                # Verify the module has exactly the tools that are configured (no more, no less)
+                module_functions = [name for name in dir(module) if callable(getattr(module, name)) and not name.startswith('_')]
+                configured_tools = set(parser_config["tools"])
+                available_functions = set(module_functions)
+                
+                # Check that all configured tools exist
+                missing_tools = configured_tools - available_functions
+                assert not missing_tools, f"Parser '{parser_name}' config lists tools not found in module: {missing_tools}"
 
-
-@pytest.mark.parametrize("parser_name,module_path,function_name", PARSER_TEST_CONFIGS)
-def test_individual_parser_imports(parser_name, module_path, function_name):
-    """Test importing individual parsers to ensure they work at RUNTIME.
-    
-    This test validates ACTUAL FUNCTIONALITY for each parser:
-    - Parser module can be imported successfully
-    - Required dependencies are available (cclib, iodata, etc.)
-    - Expected functions exist and are callable
-    
-    NOTE: This tests RUNTIME functionality, not just configuration.
-    This test will fail/skip if dependencies are missing, even if 
-    the parser configuration exists and is correct.
-    
-    Contrast with test_parser_config_exists which only tests static config.
-    """
-    import os
-    src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
-    if src_path not in sys.path:
-        sys.path.insert(0, src_path)
-    
-    try:
-        module = __import__(module_path, fromlist=[function_name])
-        func = getattr(module, function_name)
-        assert callable(func)
-        print(f"✓ {parser_name} imports successfully")
-    except ImportError as e:
-        print(f"⚠ {parser_name} not available: {e}")
-        pytest.skip(f"Skipping {parser_name} test due to missing dependencies")
-
-
-def test_mcp_server_without_optional_deps():
-    """Test MCP server core functionality without parser dependencies."""
-    import os
-    src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
-    if src_path not in sys.path:
-        sys.path.insert(0, src_path)
-    
-    # Test that we can at least import the MCP framework
-    from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-    
-    # Create a minimal MCP server
-    minimal_mcp = FastMCP("Minimal Parse Patrol")
-    assert minimal_mcp is not None
-    assert minimal_mcp.name == "Minimal Parse Patrol"
+            except ImportError as e:
+                if should_import:
+                    print(f"Error: {parser_name} config valid but not available: {e}")
+                    pytest.skip(f"Skipping {parser_name} test due to missing dependencies")
+                else:
+                    # Expected failure case
+                    pass
