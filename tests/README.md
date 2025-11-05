@@ -1,12 +1,8 @@
 # Parse Patrol Test Suite
 
-## Testing
+## Unit Tests
 
-Testing is done in multiple ways to ensure both functionality and MCP server behavior:
-
-### Automated Unit Tests
-
-Run the comprehensive test suite using pytest:
+Run the comprehensive test suite using `pytest`:
 
 ```bash
 # Run all tests with verbose output
@@ -23,94 +19,44 @@ uv run pytest tests/ --cov=parse_patrol
 The test suite includes:
 
 - **MCP Server Initialization**: Tests that the unified MCP server loads correctly
-- **Parser Configuration**: Parametrized tests ensuring each parser has proper configuration
 - **Runtime Import Tests**: Validates that parsers work with their dependencies (gracefully skips if dependencies missing)
-- **Minimal Dependency Tests**: Tests core MCP functionality without optional parser dependencies
+- NOMAD database search functionality
+- File download and extraction
+- NOMAD `pydantic` schema
 
-(`test_modular_mcp.py`)
+Note that actual testing of the parsers and their semantics is relegated to development projects for each instance.
 
-- **Purpose**: Test MCP server initialization and parser configuration
-- **Speed**: Fast (< 1 second)
-- **Dependencies**: None (tests graceful handling of missing dependencies)
-- **Markers**: `unit`
+### Pytest Markers
 
-Tests:
+- `unit`: Fast unit tests
+- `integration`: Tests requiring network access
+- `slow`: Tests that download large files (1-5 minutes)
 
-- MCP server initialization
-- Parser configuration validation
-- Individual parser import testing
-- Graceful dependency handling
+Many of these markers indicated expected performance:
 
-#### Expected Test Results
+- **Unit tests**: < 1 second total
+- **NOMAD search test**: 5-10 seconds
 
-```text
-✅ test_mcp_server_initialization - MCP server loads correctly
-✅ test_parser_config_exists[cclib parser] - Configuration present  
-✅ test_individual_parser_imports[cclib] - Parser imports successfully
-⚠️  test_individual_parser_imports[iodata] - Skipped (dependency missing)
-```
+### File Management
+
+- Downloads to `.data/[entry_id]/` directory
+- Automatic cleanup after each test
+
+### Error Handling
+
+- Skip if software files not found in NOMAD
+- Network timeout handling
+- Comprehensive cleanup on failures
 
 ### Continuous Integration
 
-GitHub Actions automatically runs tests on all pushes and pull requests:
+GitHub Actions automatically runs all tests on pushes to a pull request:
 
-- **Multi-Python Testing**: Tests run on Python 3.9, 3.10, 3.11, and 3.12
-- **Code Quality**: Linting with ruff and optional type checking with mypy
-- **Coverage Reporting**: Test coverage is tracked and reported via Codecov
+- Tests run on Python 3.12
+<!-- - **Code Quality**: Linting with `ruff` and optional type checking with `mypy` -->
+- Test coverage is tracked and reported via Codecov
 
-The CI ensures that:
-
-- All tests pass across supported Python versions
-- Code follows consistent formatting and style
-- Dependencies install correctly with `uv`
-- Both minimal and full installation scenarios work(`test_nomad_integration.py`)
-
-- **Purpose**: End-to-end testing with real quantum chemistry files
-- **Speed**: Slow (1-5 minutes, downloads files)
-- **Dependencies**: `requests`, parser libraries (`cclib`, `iodata`, etc.)
-- **Markers**: `integration`, `slow`
-
-Tests:
-
-- NOMAD database search functionality
-- File download and extraction
-- Parser testing with real QM software output files
-- Multi-software workflow validation
-- Automatic cleanup of downloaded files
-
-#### Expected Test Results
-
-```text
-✅ test_nomad_search_functionality - NOMAD search works
-✅ test_nomad_download_and_parse[Gaussian] - Downloaded and parsed Gaussian files
-✅ test_nomad_download_and_parse[ORCA] - Downloaded and parsed ORCA files  
-⚠️  test_nomad_download_and_parse[VASP] - Skipped (no VASP files found)
-✅ test_nomad_multi_software_workflow - Multi-software workflow successful
-```
-
-### Agent Pipeline Testing
-
-Test end-to-end workflows:
-
-- The agent attempts to generate pipeline scripts using the MCP tools
-- Successful cases are stored in `.pipelines/scripts/`
-- Input data for processing is found in `.pipelines/data/`
-- Schema definitions and documentation resources are available in `.resources/`
-
-This directory contains comprehensive tests for the Parse Patrol chemistry parsing package, including integration tests that download real computational chemistry files from NOMAD and test parsing functionality.
-
-## Supported Quantum Chemistry Software
-
-The integration tests cover files from:
-
-- **Gaussian** (`.log`, `.out`, `.fchk` files)
-- **ORCA** (`.out`, `.inp` files)
-- **VASP** (`OUTCAR`, `POSCAR`, `CONTCAR` files)
-- **Q-Chem** (`.out`, `.in` files)
-- **NWChem** (`.out`, `.nw` files)
-- **Psi4** (`.out` files)
-
-## Running Tests
+## Manually Running Tests
 
 ### Quick Setup
 
@@ -126,43 +72,6 @@ uv run pytest -m "not slow"
 # and with log messages (atm only INFO channel)
 uv run pytest tests/test_nomad_integration.py -vv -s --tb=long --log-cli-level=INFO
 ```
-
-Or use the test interfaces:
-
-```bash
-# Test specific software 
-uv run python tests/run_nomad_tests.py --software Gaussian
-```
-
-### Pytest Markers
-
-- `unit`: Fast unit tests
-- `integration`: Tests requiring network access
-- `slow`: Tests that download large files (1-5 minutes)
-
-## Integration Test Workflow
-
-### For Each Supported Software
-
-1. **Search NOMAD** for computational files from specific QM software
-2. **Download** raw files to temporary directory  
-3. **Parse** files with compatible parsers
-4. **Validate** parsed data structure and content
-5. **Cleanup** all downloaded files automatically
-
-### File Management
-
-- Downloads to `.data/[entry_id]/` directory
-- Automatic cleanup after each test
-- Temporary directories for test isolation
-- No permanent files left behind
-
-### Error Handling
-
-- Skip if software files not found in NOMAD
-- Parser-specific error handling
-- Network timeout handling
-- Comprehensive cleanup on failures
 
 ## Troubleshooting
 
@@ -180,10 +89,11 @@ uv sync --parsers
 
 **"No [Software] files found in NOMAD"**
 
-- Expected behavior
-- NOMAD content varies
-- Tests skip gracefully
-- Try different formulas or wait for database updates
+All queries and downloads have been verified.
+While the contents of NOMAD-lab is dynamic, the number of hits should only grow.
+This implies that tests with an expected empty return value could auto-deprecate after time.
+
+Regardless, visit [the NOMAD-lab website](https://nomad-lab.eu/nomad-lab/) directly and try the same query there.
 
 **Network timeouts:**
 
@@ -222,24 +132,3 @@ When adding new tests:
 3. **Clean up resources**: Use context managers or proper teardown
 4. **Test realistic scenarios**: Use real data when possible
 5. **Document expected behavior**: Include docstrings explaining test purpose
-
-### Adding New Software Support
-
-1. Add configuration to `QM_SOFTWARE_CONFIGS` in `test_nomad_integration.py`
-2. Specify expected file extensions and compatible parsers
-3. Test with `uv run python tests/run_nomad_tests.py --software [NewSoftware]`
-
-## Performance Notes
-
-- **Unit tests**: < 1 second total
-- **NOMAD search test**: 5-10 seconds
-- **Single software integration test**: 30-120 seconds
-- **Full integration suite**: 3-8 minutes
-
-Tests are designed to be robust and handle:
-
-- Network variability
-- NOMAD database changes
-- Missing optional dependencies
-- File format variations
-- Parser errors and limitations
