@@ -121,8 +121,10 @@ uv sync
 # Run without slow download tests
 uv run pytest -m "not slow"
 
-# Run a specific file at maximal verbosity
-uv run pytest tests/test_nomad_integration.py -vv -s --tb=long
+# Run a specific file
+# at maximal verbosity
+# and with log messages (atm only INFO channel)
+uv run pytest tests/test_nomad_integration.py -vv -s --tb=long --log-cli-level=INFO
 ```
 
 Or use the test interfaces:

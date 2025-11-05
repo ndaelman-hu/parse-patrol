@@ -10,6 +10,7 @@ import shutil
 from pathlib import Path
 import sys
 import os
+import logging
 
 # Add src to path for imports
 src_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')
@@ -57,79 +58,93 @@ class TestNOMADInterface:
             {"max_results": 2, "validate_entry": True, "formula_type": "hill"}
         ),
     ])
-    def test_nomad_search_functionality(self, search_params: dict, expected_behavior: dict):
+    def test_nomad_search_functionality(self, search_params: dict, expected_behavior: dict, caplog):
         """Test NOMAD search with various parameters and filters."""
-        try:
-            from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
-        except ImportError:
-            pytest.skip("NOMAD dependencies not available")
-        
-        # Convert string formula_type to enum if present
-        if "formula_type" in search_params:
-            formula_type_str = search_params["formula_type"]
-            search_params["formula_type"] = FormulaType(f"chemical_formula_{formula_type_str}")
-        
-        entries = nomad_search_entries(**search_params)
-        
-        # Basic validation
-        assert isinstance(entries, list)
-        assert len(entries) <= expected_behavior["max_results"]
-        
-        # Validate entries if found
-        if expected_behavior.get("validate_entry", False):
-            if entries:
-                entry = entries[0]
-                assert hasattr(entry, 'entry_id')
-                assert hasattr(entry, 'formula')
-                assert hasattr(entry, 'formula_type')
-                assert entry.entry_id is not None
-                
-                # Validate formula_type field matches expected type
-                if "formula_type" in expected_behavior:
-                    expected_type = expected_behavior["formula_type"]
-                    assert entry.formula_type.name == expected_type
+        with caplog.at_level(logging.INFO):
+            try:
+                from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
+            except ImportError:
+                pytest.skip("NOMAD dependencies not available")
+            
+            # Convert string formula_type to enum if present
+            if "formula_type" in search_params:
+                formula_type_str = search_params["formula_type"]
+                search_params["formula_type"] = FormulaType(f"chemical_formula_{formula_type_str}")
+            
+            entries = nomad_search_entries(**search_params)
+            
+            # Basic validation
+            assert isinstance(entries, list)
+            assert len(entries) <= expected_behavior["max_results"]
+            
+            # Log search results
+            formula = search_params.get("formula", "unknown")
+            logging.info(f"✓ NOMAD search for '{formula}': found {len(entries)} entries")
+            
+            # Validate entries if found
+            if expected_behavior.get("validate_entry", False):
+                if entries:
+                    entry = entries[0]
+                    assert hasattr(entry, 'entry_id')
+                    assert hasattr(entry, 'formula')
+                    assert hasattr(entry, 'formula_type')
+                    assert entry.entry_id is not None
                     
-            if (program := expected_behavior.get("validate_program")):
+                    # Validate formula_type field matches expected type
+                    if "formula_type" in expected_behavior:
+                        expected_type = expected_behavior["formula_type"]
+                        assert entry.formula_type.name == expected_type
+                        logging.info(f"✓ Formula type validation passed: {expected_type}")
+                        
+                if (program := expected_behavior.get("validate_program")):
+                    for entry in entries:
+                        if entry.program_name:
+                            assert program in entry.program_name
+                    logging.info(f"✓ Program filter validation passed: {program}")
+            elif expected_behavior.get("validate_no_match", False):
+                # For unlikely formulas, we expect either no results or results that don't match
                 for entry in entries:
+                    if entry.formula:
+                        assert "UnlikelyFormula123" not in entry.formula
                     if entry.program_name:
-                        assert program in entry.program_name
-        elif expected_behavior.get("validate_no_match", False):
-            # For unlikely formulas, we expect either no results or results that don't match
-            for entry in entries:
-                if entry.formula:
-                    assert "UnlikelyFormula123" not in entry.formula
-                if entry.program_name:
-                    assert "NonexistentProgram" not in entry.program_name
+                        assert "NonexistentProgram" not in entry.program_name
+                logging.info("✓ No-match validation passed for unlikely search terms")
     
     @pytest.mark.parametrize("entry_id", [
         "ak2gQ6tnIAe9GIOPlYaZBKPI7AZW",
     ])
     @pytest.mark.integration
     @pytest.mark.slow
-    def test_nomad_download_functionality(self, entry_id):
+    def test_nomad_download_functionality(self, entry_id, caplog):
         """Test NOMAD file download functionality."""
-        try:
-            from parse_patrol.databases.nomad.utils import nomad_get_raw_files
-        except ImportError:
-            pytest.skip("NOMAD dependencies not available")
-        
-        try:
-            # Test download with custom data root
-            download_path = nomad_get_raw_files(entry_id, data_root=str(self.test_data_dir))
+        with caplog.at_level(logging.INFO):
+            try:
+                from parse_patrol.databases.nomad.utils import nomad_get_raw_files
+            except ImportError:
+                pytest.skip("NOMAD dependencies not available")
             
-            # Verify download path exists
-            assert Path(download_path).exists()
-            assert entry_id in download_path
-            
-            # Verify some files were downloaded
-            download_dir = Path(download_path)
-            files = list(download_dir.rglob("*"))
-            assert len(files) > 0
-            
-        finally:
-            # Cleanup
-            if hasattr(self, 'test_data_dir') and self.test_data_dir.exists():
-                shutil.rmtree(self.test_data_dir)
+            try:
+                logging.info(f"⏳ Starting download for entry: {entry_id}")
+                
+                # Test download with custom data root
+                download_path = nomad_get_raw_files(entry_id, data_root=str(self.test_data_dir))
+                
+                # Verify download path exists
+                assert Path(download_path).exists()
+                assert entry_id in download_path
+                
+                # Verify some files were downloaded
+                download_dir = Path(download_path)
+                files = list(download_dir.rglob("*"))
+                assert len(files) > 0
+                
+                logging.info(f"✓ Download successful: {len(files)} files downloaded to {download_path}")
+                
+            finally:
+                # Cleanup
+                if hasattr(self, 'test_data_dir') and self.test_data_dir.exists():
+                    shutil.rmtree(self.test_data_dir)
+                    logging.info("✓ Cleanup completed")
     
     @pytest.mark.parametrize("formula_type_name", [
         "reduced",
@@ -138,36 +153,38 @@ class TestNOMADInterface:
         "descriptive"
     ])
     @pytest.mark.integration
-    def test_formula_type_field_validation(self, formula_type_name: str):
+    def test_formula_type_field_validation(self, formula_type_name: str, caplog):
         """Test that NOMADEntry.formula_type field is correctly populated."""
-        try:
-            from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
-        except ImportError:
-            pytest.skip("NOMAD dependencies not available")
-        
-        # Test that all formula types are valid enum values
-        formula_type = FormulaType(f"chemical_formula_{formula_type_name}")
-        assert formula_type.name == formula_type_name
-        
-        # Test search with each formula type
-        entries = nomad_search_entries(
-            formula="H2O",
-            formula_type=formula_type,
-            start=1,
-            end=2
-        )
-        
-        assert isinstance(entries, list)
+        with caplog.at_level(logging.INFO):
+            try:
+                from parse_patrol.databases.nomad.utils import nomad_search_entries, FormulaType
+            except ImportError:
+                pytest.skip("NOMAD dependencies not available")
+            
+            # Test that all formula types are valid enum values
+            formula_type = FormulaType(f"chemical_formula_{formula_type_name}")
+            assert formula_type.name == formula_type_name
+            
+            # Test search with each formula type
+            entries = nomad_search_entries(
+                formula="H2O",
+                formula_type=formula_type,
+                start=1,
+                end=2
+            )
+            
+            assert isinstance(entries, list)
 
-        if len(entries) > 0:
-            # Validate formula_type field is correctly set in returned entries
-            for entry in entries:
-                assert hasattr(entry, 'formula_type')
-                assert entry.formula_type == formula_type
-                assert entry.formula_type.name == formula_type_name
-        else:
-            # If no entries found, that's OK for some formula types
-            print(f"No entries found for formula_type: {formula_type_name} (this may be expected)")
+            if len(entries) > 0:
+                # Validate formula_type field is correctly set in returned entries
+                for entry in entries:
+                    assert hasattr(entry, 'formula_type')
+                    assert entry.formula_type == formula_type
+                    assert entry.formula_type.name == formula_type_name
+                logging.info(f"✓ Found {len(entries)} entries for formula_type: {formula_type_name}")
+            else:
+                # If no entries found, that's OK for some formula types
+                logging.info(f"⚠ No entries found for formula_type: {formula_type_name} (this may be expected)")
     
     @pytest.mark.parametrize("start, end, reference", [
         (1, 10, True),  # Valid range
@@ -206,24 +223,29 @@ class TestNOMADInterface:
 
     @pytest.mark.parametrize("start, end", [(1, 2)])
     @pytest.mark.integration
-    def test_nomad_search_pagination(self, start: int, end: int):
+    def test_nomad_search_pagination(self, start: int, end: int, caplog):
         """Test NOMAD search pagination parameters."""
-        try:
-            from parse_patrol.databases.nomad.utils import nomad_search_entries
-        except ImportError:
-            pytest.skip("NOMAD dependencies not available")
-        
-        entries_page1 = nomad_search_entries(
-            formula="H2O",
-            start=start,
-            end=end
-        )
-        
-        entries_page2 = nomad_search_entries(
-            formula="H2O", 
-            start=end + 1,
-            end=2 * end
-        )
-        
-        if len(entries_page1) > 0 and len(entries_page2) > 0:
-            assert entries_page1[0].entry_id != entries_page2[0].entry_id
+        with caplog.at_level(logging.INFO):
+            try:
+                from parse_patrol.databases.nomad.utils import nomad_search_entries
+            except ImportError:
+                pytest.skip("NOMAD dependencies not available")
+            
+            entries_page1 = nomad_search_entries(
+                formula="H2O",
+                start=start,
+                end=end
+            )
+            
+            entries_page2 = nomad_search_entries(
+                formula="H2O", 
+                start=end + 1,
+                end=2 * end
+            )
+            
+            logging.info(f"✓ Page 1 ({start}-{end}): {len(entries_page1)} entries")
+            logging.info(f"✓ Page 2 ({end + 1}-{2 * end}): {len(entries_page2)} entries")
+            
+            if len(entries_page1) > 0 and len(entries_page2) > 0:
+                assert entries_page1[0].entry_id != entries_page2[0].entry_id
+                logging.info("✓ Pagination validation passed: different entries on different pages")
