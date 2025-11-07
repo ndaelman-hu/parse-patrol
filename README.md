@@ -1,29 +1,85 @@
 # parse-patrol
 
+This README explains the objective, base usage and project structure.
+For more detailed information on
+
+- deploying the MCP services, see `./templates/README.md`.
+- running the unit tests, see `./tests/README.md`.
+
+> **"Try Before You Buy"** - Dual-Mode Chemistry Parsing Package
+
 ## Project Overview
 
-Submission for LLM Hackathon in Materials Science and Chemistry 2025.
-A Python-based testing ground for MCP (Model Context Protocol) servers, parsing tools, and agent-generated pipelines. It should support any arbitrary format specified by the user. Designed for LLM agent integration in IDEs like VS Code.
+*This project was originally conceived as a submission for LLM Hackathon in Materials Science and Chemistry 2025.*
 
-Parse-patrol showcases the **added benefit of MCP** for agents:
+Parse-patrol offers a framework for introducing mature community parsers / file converters.
+These community parsers have been tested to work on some input, providing high-fidelity data extraction within a domain.
+This allows any AI agent to focus on the conversion layer between the parser output and (user-defined) target file formats or schemas.
+It can even combine multiple parsing tools in one to guarantee wider processing coverage.
 
-- _semantic robustness_ via well-defined and test parser code.
-- lowered resource consumption, i.e. less thought iterations.
-- quick and modular _patching of knowledge gaps_.
+Parse-patrol implements a **dual-mode architecture** to mitigate a common disconnect between AI experimentation and production integration.
+More specifically, when asked to script a parser, agents often produce them from scratch.
+Herein, they rely on (potentially outdated) knowledge or on-the-fly research about crucial aspects like the input format specifications.
+Hence, this process leads to a prolonged test cycles where the final results may vary in quality.
 
-This means introducing _redundancy in tooling_, so the agent can choose and test from multiple resources.
+With dual-mode, the same infrastructure is used in testing and scripting, enabling a *try before you buy* workflow for AI tools.
+The community parsers can now act both as tools presented via the MCP protocol, or as plain code dependencies.
+As a developer, you can casually brainstorm and test various parsers with your AI, before settling on a design for your high-volume script.
+All MCP tools come with documentation that explains (to any client agent) how to both execute them and call them for usage within an autonomously written piece of code.
 
-### Supported Servers
+Watch our overviews [![demo](https://img.youtube.com/vi/fSAyi5ubkR0/0.jpg)](https://youtu.be/fSAyi5ubkR0) on YouTube.
 
-Currently available:
+### **MCP Discovery Mode**
 
-- cclib
-- custom_gaussian
+Agents can discover and experiment with tools through MCP protocol:
 
-Planned:
+- **Parser tools**: The actual computational chemistry parsers
+- **Database tools**: Quick download of test files from popular computational chemistry databases. Is not meant as a complete MCP solution for database interaction, but only offers partial coverage.
+- **Prompts**: Pre-built prompts for common chemistry analysis workflows
 
-- openbabel
-- nomad-lab (?)
+### **Direct Import Mode**
+
+Developers and agents can install and use parser functions directly in production code:
+
+```python
+from parse_patrol import cclib_parse
+
+result = cclib_parse("my_calculation.log")
+print(f"Final energy: {result.final_energy}")
+```
+
+## **Adaptive Tool Availability**
+
+Both modes automatically adapt to your local installation - **you only get tools for packages you've installed**:
+
+```bash
+# Lightweight: Only cclib tools available
+uv sync --extra mcp --extra cclib
+→ MCP exposes: cclib_parse_file_to_model only
+→ Direct import: from parse_patrol import cclib_parse
+
+# Full installation: All tools available  
+uv sync --extra all
+→ MCP exposes: all parsers + NOMAD database tools
+→ Direct import: all parsers available
+
+# Check what's available at runtime
+from parse_patrol import available_parsers
+print(available_parsers())  # ['cclib', 'gaussian', 'iodata']
+```
+
+This means the same codebase works across different deployment scenarios - from lightweight containers to full research environments.
+
+### Available Tools
+
+**Parser Tools** (both MCP + direct import):
+
+- **cclib**: Multi-format quantum chemistry parser (Gaussian, ORCA, etc.)
+- **iodata**: IOData-based parser for various chemistry formats
+
+**Database Tools** (MCP only):
+
+- **NOMAD**: Search and download from NOMAD materials database
 
 Potential development routes -aside from extending tooling- include:
 
@@ -34,86 +90,107 @@ Potential development routes -aside from extending tooling- include:
 
 ## Installation
 
+### Prerequisites
+
+This project uses `uv` for Python package management. If you don't have it installed:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**`uv` vs `uvx`:**
+
+- **`uv`**: Package manager and virtual environment tool (like pip + venv combined)
+- **`uvx`**: Tool for running packages temporarily without installation (like pipx)
+
+### Development Setup
+
 There is currently only a development version of this project.
 Firstly, `git clone` this repository to your own local machine.
 
-This project is managed via `uv` for Python.
-Dependencies are set in `pyproject.toml` and are updated via `uv sync`.
-To execute any script, use `uv run python <filepath>` (automatically calls `uv sync`).
-
-To try out individual Python sessions open a new bash shell.
-Then activate the virtual environment via `. .venv/bin/activate`.You can now initiate your Python session (`python`).
-
-## Manual Testing setup
-MCP primitives developed for a single server can be tested using [MCP instructor](https://github.com/modelcontextprotocol/inspector). The problem with it can not handle multiple servers at once. So, it requires to test each server individually. (We did not find the way to inspect multiple servers at once using MCP inspector).
+```bash
+git clone <repository>
+cd parse-patrol
+uv sync  # Creates (+ manages) a virtual environment and installs dependencies
 ```
-uv run mcp dev <path-to-server-file e.g., src/nomad/__main__.py>
+
+### For Direct Python Usage
+
+**Install specific parsers only:**
+
+```bash
+# Install multiple parsers
+uv sync --extra cclib --extra iodata
+
+# Install all parsers at once
+uv sync --extra parsers
 ```
-Then click on the url link appeared on the terminal to open the MCP inspector in the browser or inspector will automatically open in browser.
 
-To run and test all the servers together in VS Code, as a client, list your servers in a `json` file e.g., `.vscode/mcp.json` and VSCode will be capable of detect the servers and can be run on the clicking button above the server (appeared in the VSCode UI).
+### For MCP Server Usage
 
-![mcp.json](assets/images/mcp_json.png)
+**Install with specific parser support:**
 
-Example of `mcp.json` listing all the servers:
-```Json
-{
-  "servers": {
-    "parse-patrol": {
-      "command": "uv",
-      "args": ["run", "python", "src/parse_patrol/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    },
-    "cclib": {
-      "command": "uv",
-      "args": ["run", "python", "src/cclib/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    },
-    "nomad": {
-      "command": "uv",
-      "args": ["run", "python", "src/nomad/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    }
-  }
-}
+```bash
+# MCP standalone
+uv sync --extra mcp
+
+# MCP + all parsers 
+uv sync --extra all-parsers
+
+# Everything (parsers + databases + MCP + dev tools)
+uv sync --extra all
+```
+
+**Running the MCP server:**
+
+There are 2 options to start the MCP server.
+Either from within the host application (in this case typically an IDE).
+See the IDE-specific instructions under `./templates/README.md` (**recommend**).
+
+Alternatively, you can start the server from your terminal.
+In this case, you have to manage connecting an agent yourself (**dis**).
+
+```bash
+uv run python -m parse_patrol
+```
+
+**Alternative installation methods:**
+
+```bash
+# Temporary execution (no installation)
+uvx --from .[all] parse-patrol-mcp
+
+# System-wide installation
+uv tool install .[all-parsers]
+parse-patrol-mcp
 ```
 
 ## Project Structure
 
-```
+```bash
 parse-patrol/
 ├── src/
-│   ├── parse_patrol/             # Unified MCP server entrypoint, collects all subservers
-│   ├── parsers/                  # Parsing tools with their own MCP server in `__main__.py`
-│   └── utils/                    # Shared utilities/helpers
-├── scripts/                      # (Currently empty) CLI tools, setup scripts, etc.
-├── .pipelines/                   # Scripts and data for parsing pipelines
-│   ├── scripts/                  # Agent-generated pipeline scripts and examples
-│   └── data/                     # Test data files for pipeline processing
-├── .resources/                   # Schema and documentation resources
-│   ├── semantic-schema.md        # Semantic schema definitions
-│   └── structure-schema.md       # Structure schema definitions
-└── .data/                        # Data files downloaded by nomad MCP, to parse by the agent
+│   ├── parse_patrol/             # Unified MCP server entrypoint, collects all sub-servers
+│   │   ├── databases/            # All database tools for downloading testing data
+│   │   │   └── < db name >/      # Specific database tool
+│   │   │       ├── __main__.py   # Tool MCP functionalities
+│   │   │       └── utils.py      # Schema definitions and interface layer. Can be loaded in as a dependency.
+│   │   └── parsers/              # All parsing tools
+│   │       └── < parser name >/  # Specific parsing tool
+│   │           ├── __main__.py   # Tool MCP functionalities
+│   │           └── utils.py      # Schema definitions and interface layer. Can be loaded in as a dependency.
+│   ├──utils/                     # Utilities/helpers across tools
+│   ├── __init__.py               # File to log all available tools, resources (and prompts)
+│   └── __main__.py               # Main interface to parse patrol. Defines most prompts
+├── scripts/                      # CLI tools, setup scripts, etc. (Currently empty)
+├── .pipelines/                   # Placeholder folder for the agent to write local tests to. Should only be used locally!
+│   ├── data/                     # Temporary data files for testing the generated pipeline
+│   ├── resources/                # Schema specifications defining the target file format / schema
+│   └── scripts/                  # Agent-generated pipeline scripts and examples
 ├── pyproject.toml
 ├── README.md
-├── LICENSE
+└── LICENSE
 ```
-
-## Usage
-
-- **VS Code**: A central access server with all functional tools is registered under `.vscode/mcp.json` (copy from `.vscode/mcp.template.json`). It can be run from this file in the IDE, or found under the extensions the (`Ctrl+Shift+X` on Ubuntu). Once the server is started, it will be available to the `Agent` mode in co-pilot `CHAT` (make sure to switch your co-pilot from `Ask/Edit` to `Agent` mode!!!).
-
-There are now various prompts available. Type slash (`/`) in the chat window and wait for auto-complete.
-All prompts should show under `/mcp.parse-patrol.<prompt path>`. Note that the MCP server name may change when published under a different or multiple servers. While you are executing the slash commands, you can find the description of the required and optional input above the bar where you are entering the info (it is not very obvious at first).
-
-Some prompts are dynamic and will request fields to filled in. When a field is optional, it will be marked as such. Finally, the full prompt will be returned to the chat input field, ready to be submitted.
-Editing is still possible at this step.
-
-PITFALL: do not use the file explorer for adding fields. This will copy-paste the file contents, NOT the file path.
-
-### Starting the MCP servers remotely
-
-In VS Code, go t the command prompt, type `> mcp` and select "MCP: Open Remote User Configuration". It will open up a `mcp.json` file, where you can paste in your MCP server configurations.
 
 ## Development
 
@@ -125,27 +202,19 @@ Once the servers passes the checks, register the new MCP server:
 - to unified interface in `src/parse_patrol/`. **Only the central interface is exposed in `main` branch!** This allows agents and users to access all parsing tools via a single, clear server endpoint.
 - in this `README.md`, if this is a new tool.
 
-Testing is done 2 ways:
-
-- the agent attempts to generate pipeline scripts. Successful cases may be stored under in `.pipelines/scripts/`. The input to be processed is found in `.pipelines/data/`. Schema definitions and documentation resources are available in `.resources/`.
-- test the parser and server code in `tests/`.
+For running or adding tests, as well as contributing to the official repository, see `./tests/README.md`.
 
 ## Online Resources
 
-The following links explain the basics of MCP, including the distinction between _tools_, _resources_, and _prompts_. **Make sure to respect these distinctions!**
+The following links explain the basics of MCP, including the distinction between *tools*, *resources*, and *prompts*. **Make sure to respect these distinctions!**
 
 - Basics
-  - Full repo and README of the MCP Python SDK: https://github.com/modelcontextprotocol/python-sdk
-  - The FastMCP package docs: https://gofastmcp.com
+  - Full repo and README of the MCP Python SDK: <https://github.com/modelcontextprotocol/python-sdk>
+  - The FastMCP package docs: <https://gofastmcp.com>
 - Advanced
-  - JSON-RPC: foundational protocol that formalizes MCP server-client communication. It is transport-layer agnostic: https://www.jsonrpc.org/specification
+  - JSON-RPC: foundational protocol that formalizes MCP server-client communication. It is transport-layer agnostic: <https://www.jsonrpc.org/specification>
 - VS Code
-  - detailed MCP server setup and management: https://code.visualstudio.com/docs/copilot/customization/mcp-servers
+  - detailed MCP server setup and management: <https://code.visualstudio.com/docs/copilot/customization/mcp-servers>
 - cclib
-  - Docs explaining the supported fields and codes: https://cclib.github.io/data.html
-  - Repo for in-depth navigation of the code: https://github.com/cclib
-
-## Demo video clip
-
-[![Watch the demo](https://img.youtube.com/vi/fSAyi5ubkR0/0.jpg)](https://youtu.be/fSAyi5ubkR0)
-
+  - Docs explaining the supported fields and codes: <https://cclib.github.io/data.html>
+  - Repo for in-depth navigation of the code: <https://github.com/cclib>

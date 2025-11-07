@@ -1,23 +1,83 @@
 [project]
-name = "parse_patrol"
+name = "parse-patrol"
 version = "0.1.0"
-description = "A Python-based testing ground for MCP (Model Context Protocol) servers, parsing tools, and agent-generated pipelines."
+description = "Dual-mode chemistry parsing package: MCP discovery + direct Python imports for computational chemistry analysis"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cclib>=1.8.1",
-    "mcp[cli]>=1.13.1",
-    "pydantic>=2.11.7",
-    "qc-iodata>=1.0.0a8",
-    "requests>=2.32.5",
-    "asyncio>=4.0.0",
-    "aiofiles>=24.1.0",
-    "aiohttp",
+    "pydantic", 
+    "requests",
 ]
 
+[project.optional-dependencies]
+# Parser dependencies (can be installed individually)
+cclib = [
+    "cclib>=1.8.1",
+]
+gaussian = [
+    "periodictable>=1.6.1",
+]
+iodata = [
+    "qc-iodata>=1.0.0a8",
+]
+nomad = [
+    "zipfile-deflate64>=0.2.0",
+]
 
-[tool.hatch.build]
-packages = ["src"]
+# Parser groups
+parsers = [
+    "parse-patrol[cclib,gaussian,iodata]"
+]
+databases = [
+    "parse-patrol[nomad]"
+]
+
+# MCP server functionality
+mcp = [
+    "mcp[cli]",
+]
+
+# Development tools
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0", 
+    "black>=22.0.0",
+    "ruff>=0.0.261",
+]
+
+# Convenience groups
+all-parsers = [
+    "parse-patrol[parsers,mcp]"
+]
+all = [
+    "parse-patrol[parsers,databases,mcp,dev]"
+]
+
+[project.scripts]
+parse-patrol-mcp = "parse_patrol.__main__:mcp.run"
+
+[tool.hatch.build.targets.wheel]
+sources = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (may require network access)",
+    "slow: marks tests as slow (may download large files)",
+    "unit: marks tests as fast unit tests",
+]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
 
 [build-system]
 requires = ["hatchling"]

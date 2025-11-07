@@ -1,9 +1,0 @@
-{
-  "servers": {
-    "parse-patrol": {
-      "command": "uv",
-      "args": ["run", "python", "src/parse_patrol/__main__.py"],
-      "cwd": "${workspaceFolder}"
-    }
-  }
-}
