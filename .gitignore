@@ -1,5 +1,8 @@
-# Repo
-.data
+# Project folders
+.pipelines/data
+.pipelines/resources
+.pipelines/scripts
+tests/.data
 
 # VS Code
 .vscode/

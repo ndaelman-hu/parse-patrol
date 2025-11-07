@@ -1,9 +1,6 @@
-import aiofiles
-import aiohttp
 import zipfile
+import requests
 from pathlib import Path
-from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
-from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
@@ -16,8 +13,12 @@ class NOMADAction(str, Enum):
     search_and_download = "search_and_download"
 
 
-configure_logging()
-logger = get_logger(__name__)
+class FormulaType(str, Enum):
+    """NOMAD supported chemical formula types."""
+    reduced = "chemical_formula_reduced"
+    hill = "chemical_formula_hill"
+    anonymous = "chemical_formula_anonymous"
+    descriptive = "chemical_formula_descriptive"
 
 
 class EntryRange(BaseModel):
@@ -44,6 +45,7 @@ class NOMADEntry(BaseModel):
     entry_id: str = Field(..., description="NOMAD entry ID")
     upload_id: Optional[str] = Field(None, description="NOMAD upload ID")
     formula: Optional[str] = Field(None, description="Chemical formula")
+    formula_type: FormulaType = Field(..., description="Type of chemical formula representation")
     program_name: Optional[str] = Field(
         None, description="Computational program used (VASP, Gaussian, etc.)"
     )
@@ -81,12 +83,9 @@ def _parse_date_to_timestamp(date_str: str, end_of_day: bool = False) -> Optiona
     return int(parsed_date.timestamp() * 1000)
 
 
-mcp = FastMCP("NOMAD Central Materials Database")
-
-
-@mcp.tool()
-async def search_nomad_entries(
+def nomad_search_entries(
     formula: Optional[str] = None,
+    formula_type: FormulaType = FormulaType.reduced,
     program_name: Optional[str] = None,
     start: int = 1,
     end: int = 10,
@@ -97,6 +96,7 @@ async def search_nomad_entries(
 
     Args:
         formula: Chemical formula (e.g., "Si2O4", "C6H6")
+        formula_type: Type of chemical formula to search (default: reduced)
         program_name: Computational program (e.g., "Gaussian", "ORCA")
         start: Starting entry number (1-based, default: 1)
         end: Ending entry number (1-based, default: 10)
@@ -128,7 +128,7 @@ async def search_nomad_entries(
 
     # Add search filters
     if formula:
-        query_body["query"]["results.material.chemical_formula_reduced:any"] = [formula]
+        query_body["query"][f"results.material.{formula_type.value}:any"] = [formula]
     if program_name:
         query_body["query"]["results.method.simulation.program_name:any"] = [
             program_name
@@ -158,13 +158,12 @@ async def search_nomad_entries(
         query_body["query"]["upload_create_time"] = date_filter
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                base_url, json=query_body, timeout=aiohttp.ClientTimeout(total=30)
-            ) as resp:
-                if resp.status != 200:
-                    raise Exception(f"Failed to query NOMAD API: HTTP {resp.status}")
-                data = await resp.json()
+        response = requests.post(base_url, json=query_body, timeout=30)
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to query NOMAD API: HTTP {response.status_code}")
+        
+        data = response.json()
 
         entries = []
         for item in data.get("data", []):
@@ -173,7 +172,8 @@ async def search_nomad_entries(
                 upload_id=item.get("upload_id"),
                 formula=item.get("results", {})
                 .get("material", {})
-                .get("chemical_formula_reduced"),
+                .get(formula_type.value),
+                formula_type=formula_type,
                 program_name=item.get("results", {})
                 .get("method", {})
                 .get("simulation", {})
@@ -186,23 +186,22 @@ async def search_nomad_entries(
             entries.append(entry)
         return entries
 
-    except aiohttp.ClientError as e:
+    except requests.RequestException as e:
         raise Exception(f"Failed to query NOMAD API: {str(e)}")
 
 
-
-@mcp.tool()
-async def get_nomad_raw_files(entry_id: str) -> str:
-    """Download and extract NOMAD raw files to .data directory.
+def nomad_get_raw_files(entry_id: str, data_root: str='tests/.data') -> str:
+    """Download and extract NOMAD raw files.
 
     Args:
         entry_id: NOMAD entry ID
+        data_root: Optional root directory for downloads. Defaults to tests/.data if not specified.
 
     Returns:
         Path to extracted files directory
     """
     # Create entry-specific directory
-    data_dir = Path(".data") / entry_id
+    data_dir = Path(data_root) / entry_id
     data_dir.mkdir(parents=True, exist_ok=True)
 
     # Check if files already downloaded
@@ -213,32 +212,29 @@ async def get_nomad_raw_files(entry_id: str) -> str:
     zip_path = data_dir / f"{entry_id}_raw.zip"
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url, timeout=aiohttp.ClientTimeout(total=120)
-            ) as resp:
-                if resp.status != 200:
-                    raise Exception(
-                        f"Failed to download NOMAD raw files for {entry_id}: HTTP {resp.status}"
-                    )
-                async with aiofiles.open(zip_path, "wb") as f:
-                    async for chunk in resp.content.iter_chunked(8192):
-                        await f.write(chunk)
+        response = requests.get(url, timeout=120)
+        
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to download NOMAD raw files for {entry_id}: HTTP {response.status_code}"
+            )
+        
+        with open(zip_path, "wb") as f:
+            f.write(response.content)
 
-        # Extract zip (sync, as zipfile is not async)
+        # Extract zip
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(data_dir)
         zip_path.unlink()
 
         return str(data_dir)
-    except aiohttp.ClientError as e:
+    except requests.RequestException as e:
         raise Exception(f"Failed to download NOMAD raw files for {entry_id}: {str(e)}")
     except zipfile.BadZipFile as e:
         raise Exception(f"Failed to extract NOMAD raw files for {entry_id}: {str(e)}")
 
 
-@mcp.tool()
-async def get_nomad_archive(
+def nomad_get_archive(
     entry_id: str, section: Optional[str] = None
 ) -> Dict[str, Any]:
     """Download NOMAD archive data for detailed computational results.
@@ -255,68 +251,16 @@ async def get_nomad_archive(
     params = {}
     if section:
         params["required"] = section
+    
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url, params=params, timeout=aiohttp.ClientTimeout(total=60)
-            ) as resp:
-                if resp.status != 200:
-                    raise Exception(
-                        f"Failed to download NOMAD archive for {entry_id}: HTTP {resp.status}"
-                    )
-                data = await resp.json()
+        response = requests.get(url, params=params, timeout=60)
+        
+        if response.status_code != 200:
+            raise Exception(
+                f"Failed to download NOMAD archive for {entry_id}: HTTP {response.status_code}"
+            )
+        
+        data = response.json()
         return data
-    except aiohttp.ClientError as e:
+    except requests.RequestException as e:
         raise Exception(f"Failed to download NOMAD archive for {entry_id}: {str(e)}")
-
-
-@mcp.prompt()
-async def nomad_materials_prompt(
-    search_query: str, action: NOMADAction = NOMADAction.search, max_entries: int = 5
-) -> str:
-    """Generate a prompt for NOMAD materials database interactions.
-    
-    Args:
-        search_query: Description of materials/compounds to search for
-        action: Action to perform (search, download, or search_and_download)
-        max_entries: Maximum number of entries to process (default: 5)
-    
-    Returns:
-        Formatted prompt string for NOMAD operations
-    """
-    
-    if action == NOMADAction.search:
-        return f"""
-        Search the NOMAD materials database for: {search_query}
-
-        Use `search_nomad_entries` with appropriate parameters to find up to {max_entries} relevant computational entries. Focus on:
-        - Chemical formula matching
-        - Computational method information  
-        - Program versions and metadata
-        - Recent high-quality calculations
-
-        Return a list of NOMADEntry objects with detailed metadata.
-        """
-    
-    elif action == NOMADAction.download:
-        return f"""
-        Download raw computational files from NOMAD for: {search_query}
-
-        Assuming you have specific entry IDs, use `get_nomad_raw_files` to download the raw computational files to the .data directory. 
-        The files will be extracted and ready for parsing with other tools like cclib or custom_gaussian.
-        """
-    
-    else:  # search_and_download
-        return f"""
-        Search and download materials data from NOMAD for: {search_query}
-
-        1. First use `search_nomad_entries` to find up to {max_entries} relevant entries
-        2. Then use `get_nomad_raw_files` to download the raw files for promising entries
-        3. Files will be available in .data/[entry_id]/ for further analysis
-
-        This comprehensive workflow provides both metadata and raw computational data for analysis.
-        """
-
-
-if __name__ == "__main__":
-    mcp.run()

@@ -1,20 +1,23 @@
+"""
+Core CCLib parsing functionality for direct Python usage.
+This module provides sync functions that can be imported and used directly.
+"""
+
 import cclib
-from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-from mcp.server.fastmcp.utilities.logging import configure_logging, get_logger
-
-
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, Field
-
-
-configure_logging("INFO")
-logger = get_logger(__name__)
+from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 
 class CCDataModel(BaseModel):
+    """Pydantic model for CCLib parsed data."""
     class Config:
-        # Prevent model registration conflicts when imported multiple times
         validate_assignment = True
+    
+    # Format and metadata information
+    source_format: Optional[str] = Field(None, description="Detected file format/software (e.g., 'gaussian', 'orca', 'qchem')")
+    source_version: Optional[str] = Field(None, description="Software version if detected (e.g., 'Gaussian 16', 'ORCA 5.0')")
+    file_extension: Optional[str] = Field(None, description="Original file extension (e.g., '.log', '.out', '.fchk')")
+    
     aonames: Optional[List[str]] = Field(None, description="Atomic orbital names (list of strings)")
     aooverlaps: Optional[List] = Field(None, description="Atomic orbital overlap matrix (array of rank 2)")
     atombasis: Optional[List[List[int]]] = Field(None, description="Indices of atomic orbitals on each atom (list of lists)")
@@ -73,7 +76,7 @@ class CCDataModel(BaseModel):
     scanenergies: Optional[List] = Field(None, description="Energies of potential energy surface (list)")
     scannames: Optional[List[str]] = Field(None, description="Names of variables scanned (list of strings)")
     scanparm: Optional[List] = Field(None, description="Values of parameters in potential energy surface (list of tuples)")
-    scfenergies: Optional[List] = Field(None, description="Molecular electronic energies after SCF (Hartree-Fock, DFT) (eV, array of rank 1)")
+    scfenergies: Optional[List] = Field(None, description="Molecular electronic energies after SCF (Hartree-Fock, DFT) (eV, array of rank 1). Available from all QM software output files (.log, .out, .fchk)")
     scftargets: Optional[List] = Field(None, description="Targets for convergence of the SCF (array of rank 2)")
     scfvalues: Optional[List] = Field(None, description="Current values for convergence of the SCF (list of arrays of rank 2)")
     temperature: Optional[float] = Field(None, description="Temperature used for Thermochemistry (kelvin, float)")
@@ -90,18 +93,34 @@ class CCDataModel(BaseModel):
     zpve: Optional[float] = Field(None, description="Zero-point vibrational energy correction (hartree/particle, float)")
 
 
-def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: ignore
+def ccdata_to_model(ccdata: cclib.parser.data.ccData, filepath: str = None) -> CCDataModel:  # type: ignore
     """Convert ccData object to CCDataModel (Pydantic) format.
     
     Args:
         ccdata: Parsed ccData object from cclib
+        filepath: Original filepath for metadata extraction
     
     Returns:
         CCDataModel with converted data types for JSON serialization
     """
-    logger.info("Converting ccData to CCDataModel...")
     result = {}
+    
+    # Add format metadata if available
+    if filepath:
+        import os
+        result['file_extension'] = os.path.splitext(filepath)[1] if '.' in os.path.basename(filepath) else None
+    
+    # Extract software information from metadata if available
+    if hasattr(ccdata, 'metadata') and ccdata.metadata:
+        package_info = ccdata.metadata.get('package', '')
+        if package_info:
+            result['source_format'] = package_info.lower()
+            result['source_version'] = ccdata.metadata.get('package_version', '')
+    
     for field_name in CCDataModel.model_fields.keys():
+        if field_name in ['source_format', 'source_version', 'file_extension']:
+            continue  # Already handled above
+            
         if hasattr(ccdata, field_name):
             value = getattr(ccdata, field_name)
             if value is None:
@@ -117,47 +136,29 @@ def ccdata_to_model(ccdata: cclib.parser.data.ccData) -> CCDataModel:  # type: i
     return CCDataModel(**result)
 
 
-mcp = FastMCP("CCLib Chemistry Parser")
-
-
-@mcp.tool()
-async def cclib_parse_file_to_model(filepath: str) -> CCDataModel:
-    """Parse chemistry file and return as CCDataModel for JSON serialization.
+def cclib_parse(filepath: str) -> CCDataModel:
+    """Parse chemistry file using cclib and return as CCDataModel.
+    
+    This is the core sync function for direct usage in production code.
     
     Args:
         filepath: Path to chemistry output file
     
     Returns:
         CCDataModel with parsed data converted for JSON serialization
+        
+    Raises:
+        FileNotFoundError: If file cannot be opened
+        ValueError: If file cannot be parsed
     """
-    logger.info("Parsing file: %s ...", filepath)
     filereader = cclib.io.ccopen(filepath)  # type: ignore
     if filereader is None:
-        logger.error("File not found: %s", filepath)
-        return CCDataModel()
+        raise FileNotFoundError(f"File not found or unsupported format: {filepath}")
+    
     ccdata = filereader.parse()
-    return ccdata_to_model(ccdata)
+    if ccdata is None:
+        raise ValueError(f"Failed to parse file: {filepath}")
+        
+    return ccdata_to_model(ccdata, filepath)
 
 
-@mcp.prompt()
-async def cclib_test_prompt(
-    file_description: str, output_format: str = "a CCDataModel for JSON serialization"
-) -> str:
-    """Generate a prompt for parsing chemistry files using cclib.
-    
-    Args:
-        file_description: Description of the file to be parsed
-        output_format: Desired output format (default: CCDataModel)
-    
-    Returns:
-        Formatted prompt string for the MCP client
-    """
-
-    return f"""
-    Use `cclib_parse_file_to_model`
-    to parse the file with description {file_description}
-    and return the data as {output_format}.
-    """
-
-if __name__ == "__main__":
-    mcp.run()

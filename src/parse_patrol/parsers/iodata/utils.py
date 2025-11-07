@@ -1,10 +1,7 @@
 import iodata as iodata_package
-from mcp.server.fastmcp import FastMCP # pyright: ignore[reportMissingImports]
-
 from typing import Optional, Dict, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
-mcp = FastMCP("IOData: A python library for reading, writing, and converting computational chemistry file formats and generating input files")
 
 class IODataCubeModel(BaseModel):
     """The volumetric data from a cube (or similar) file."""
@@ -14,8 +11,14 @@ class IODataCubeModel(BaseModel):
     data: List[List[List[float]]] = Field(description="A (K, L, M) array of data on a uniform grid.")
     shape: List[int] = Field(description="Shape of the rectangular grid.")
 
+
 class IODataModel(BaseModel):
     """A container class for data loaded from (or to be written to) a file."""
+    
+    # Format and metadata information
+    source_format: Optional[str] = Field(None, description="Detected file format/software (e.g., 'gaussian', 'vasp', 'orca')")
+    source_extension: Optional[str] = Field(None, description="Original file extension or type (e.g., '.fchk', 'POSCAR', '.cube')")
+    detected_software: Optional[str] = Field(None, description="Detected quantum chemistry software package")
 
     atcharges: Optional[Dict[str, List[float]]] = Field(None, description="A dictionary where keys are names of charge definitions and values are arrays with atomic charges (size N).")
     atcoords: Optional[List[List[float]]] = Field(None, description="A (N, 3) float array with Cartesian coordinates of the atoms.")
@@ -31,9 +34,9 @@ class IODataModel(BaseModel):
     cellvecs: Optional[List[float]] = Field(None, description="A (NP, 3) array with (real-space) cell vectors describing periodic boundary conditions. A single vector corresponds to a 1D cell, e.g. for a wire. Two vectors describe a 2D cell, e.g. for a membrane. Three vectors describe a 3D cell, e.g. a crystalline solid.")
     charge: Optional[float] = Field(None, description="The net charge of the system. When possible, this is derived from atcorenums and nelec.")
     core_energy: Optional[float] = Field(None, description="The Hartree-Fock energy due to the core orbitals.")
-    cube: Optional[IODataCubeModel] = Field(None, description="An instance of Cube, describing the volumetric data from a cube (or similar) file.")
-    energy: Optional[float] = Field(None, description="The total energy (electronic + nn).")
-    extcharges: Optional[List[float]] = Field(None, description="Array with values of external charges, with shape (nextcharge, 4). First three columns for Cartesian X, Y and Z coordinates, last column for the actual charge.")
+    cube: Optional[IODataCubeModel] = Field(None, description="An instance of Cube, describing the volumetric data from a cube (or similar) file. Common sources: Gaussian .cube files, VASP CHGCAR/LOCPOT files, or other volumetric density data.")
+    energy: Optional[float] = Field(None, description="The total energy (electronic + nn) in Hartree. Available from most QM software output files (.log, .out, .fchk files).")
+    extcharges: Optional[List[float]] = Field(None, description="Array with values of external charges, with shape (nextcharge, 4). First three columns for Cartesian X, Y and Z coordinates, last column for the actual charge. Used in QM/MM calculations.")
     extra: Optional[dict] = Field(None, description="A dictionary with additional data loaded from a file. Any data which cannot be assigned to the other attributes belongs here. It may be decided in future to move some of the results from this dictionary to IOData attributes, with a more final name.")
     g_rot: Optional[float] = Field(None, description="The rotational symmetry number of the molecule.")
     lot: Optional[str] = Field(None, description="The level of theory used to compute the orbitals (and other properties).")
@@ -51,17 +54,47 @@ class IODataModel(BaseModel):
     two_rdms: Optional[dict] = Field(None, description="Dictionary where keys are names and values are two-particle density matrices. Names can be ``post_scf`` or ``post_scf_spin``. When relevant, these names must have a suffix ``_ao`` or ``_mo`` to clarify in which basis the RDMs are computed. See ``one_rdms`` for more details. Array indexes are in physicists' notation.")
 
 
-def iodata_to_model(ext_data: iodata_package.IOData) -> IODataModel:
+def iodata_to_model(ext_data: iodata_package.IOData, filepath: Optional[str] = None) -> IODataModel: # pyright: ignore[reportAttributeAccessIssue]
     """Convert IOData object to IODataModel (Pydantic) format.
     
     Args:
         ext_data: Parsed iodata object from IOData
+        filepath: Original filepath for metadata extraction
     
     Returns:
         IODataModel with converted data types for JSON serialization
     """
     result = {}
+    
+    # Add format metadata if available
+    if filepath:
+        import os
+        basename = os.path.basename(filepath)
+        ext = os.path.splitext(filepath)[1] if '.' in basename else None
+        result['source_extension'] = ext or basename  # For VASP files without extensions
+        
+        # Detect software based on file patterns
+        if ext in ['.fchk', '.log', '.out', '.gjf', '.com'] or 'gaussian' in filepath.lower():
+            result['detected_software'] = 'Gaussian'
+            result['source_format'] = 'gaussian'
+        elif 'POSCAR' in basename or 'CONTCAR' in basename or 'OUTCAR' in basename or 'CHGCAR' in basename:
+            result['detected_software'] = 'VASP'
+            result['source_format'] = 'vasp'
+        elif ext == '.cube' or '.cube' in basename:
+            result['source_format'] = 'cube'
+        elif ext in ['.xyz']:
+            result['source_format'] = 'xyz'
+        elif 'orca' in filepath.lower():
+            result['detected_software'] = 'ORCA'
+            result['source_format'] = 'orca'
+        else:
+            result['detected_software'] = None
+            result['source_format'] = None
+    
     for field_name in IODataModel.model_fields.keys():
+        if field_name in ['source_format', 'source_extension', 'detected_software']:
+            continue  # Already handled above
+            
         value = getattr(ext_data, field_name, None)
         if value is None:
             continue
@@ -75,8 +108,8 @@ def iodata_to_model(ext_data: iodata_package.IOData) -> IODataModel:
             result[field_name] = value
     return IODataModel(**result)
 
-@mcp.tool()
-async def iodata_parse_file_to_model(filepath: str) -> IODataModel:
+
+def iodata_parse(filepath: str) -> IODataModel:
     """Parse chemistry file and return as IODataModel for JSON serialization.
     
     Args:
@@ -85,27 +118,5 @@ async def iodata_parse_file_to_model(filepath: str) -> IODataModel:
     Returns:
         IODataModel with parsed data converted for JSON serialization
     """
-    data = iodata_package.load_one(filepath)
-    return iodata_to_model(data)
-
-@mcp.prompt()
-async def iodata_test_prompt(
-    file_description: str, output_format: str = "a IOData for JSON serialization"
-) -> str:
-    """Generate a prompt for parsing chemistry files using IOData.
-    
-    Args:
-        file_description: Description of the file to be parsed
-        output_format: Desired output format (default: IOData)
-    
-    Returns:
-        Formatted prompt string for the MCP client
-    """
-
-    return (
-        f"Use `iodata_parse_file_to_model` to parse the file (with extension .fck) with description {file_description} "
-        f"and return the data as {output_format}."
-    )
-
-if __name__ == '__main__':
-    mcp.run()
+    data = iodata_package.load_one(filepath) # pyright: ignore[reportAttributeAccessIssue]
+    return iodata_to_model(data, filepath)
