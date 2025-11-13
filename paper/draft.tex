@@ -13,26 +13,42 @@
 
 \section*{Introduction}
 
-Converting files, often times also referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
+Converting files, often times referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
 These specifications may exist at a format level, a schema level or more abstractly, an ontological one.
 Being dependent on both sides, makes parser infrastructure very brittle and expensive to maintain.
 This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or code maintainer (for computations).
 Meanwhile, as database consortia seek to structure these various schemas (and formats) into a more centralized standard, they risk breaking the output specifications of their parsers.
-In short, the community needs a robust procedure for rapdily rolling updates, so the infrastrcuture tracks the advances in standardization.
+In short, the community needs a robust procedure for rapdily rolling out updates to the standards and schemas down to the infrastructure implementing them.
 
-Our solution below combines the best of worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
-It does so via the recently published MCP framework, which has rapidly become an industry standard.
-Hence, our approach is both model and host (e.g. IDEs, cloud suppliers) agnostic.
+Parse-Patrol combines the best of worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
+It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp}, which has rapidly become an industry standard and is now supported by all major commercial models.
+MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes software tools, static and dynamic resources, and specially desgined system prompts.
+This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
 
 \section*{Results}
-Parse-Patrol is a dual-mode chemistry parsing infrastructure designed to bridge the divide between AI experimentation and production integration.
-The project provides a framework that integrates community-proven parsing tools with AI agents, enabling high-fidelity data extraction and reliable format conversion while reducing hallucinations to a minimum.
-The system addresses a recurring issue in AI-generated parsers: models often attempt to generate domain-specific parsers from first principles like Gaussian\cite{gaussian}, slowing development cycles and producing inconsistent outcomes.
 
-The core contribution of Parse-Patrol is its dual-mode architecture (cf. Fig.\ref{fig:parse-patrol}), which supports both discovery through MCP (Model Context Protocol)\cite{mcp} and direct import as standard Python functions.
-In discovery mode, agents can explore chemistry parsing tools, lightweight database interfaces, and curated analysis prompts, all exposed through MCP. In direct import mode, developers can incorporate the same tools directly into production scripts, ensuring stable and repeatable workflows.
-This unified infrastructure also adapts dynamically to the user's environment, exposing only tools corresponding to installed dependencies.
-Demonstrations include real-time parser experimentation, multi-parser (e.g. cclib, iodata) integration for broader format coverage, and a flexible conversion layer for transforming parser output into user-defined schemas.
+When using agentic assistants, the most state-of-the-art mode for running LLMs, there are various pitfalls that may come up:
+
+- Few online resources of scientific specifications, or a general lack of documentation.
+- Long test iteration cycles when programming an implementation from scratch.
+
+To circumvent these hurdles we turn to well-established community parsers.
+These typically have a more restricted and speciliazed scope for a set of scientific specifications.
+Their inclusion enables fast, high-fidelity data extraction and reliable format conversion compare to a standalone agent, while also reducing hallucinations to a minimum.
+We provide direct access to these parsers and their documentation via the MCP tools and resources, respectively.
+We can then focus on adding support for more parsers to build out a wide coverage, as well as introduce multiple options for the agent to choose from.
+Note that MCP does not provide any direction on how to extend the layer in a structured fashion: one by default just extends the list of tools.
+Our first technical innovation is thus to define a hiearchical protocol for extending the MCP server.
+
+Where the MCP powers interactive testing and development, actual parsing infrastructure requires code in production.
+We observed ourselves that even with access to a MCP parsing server, the agent will without explicit prompting revert back to generating domain-specific parsers from first principles.
+These parser prototypes are often erroneous, as the agent cannot generally introspect the MCP server code itself.
+Hence, it has no access to how the community parsers are called, or even installed for that matter.
+Therefore, we bundle our server with dependency interfaces and installation setups that can be called from the code itself.
+
+Providing a common solution that is both a MCP sever and a module is not easy, as each has different requirements and is distributed via different channels: MCP Registry and PyPi, respectively, for example.
+Our second innovation, then, is the design of an architecture that supports \textit{dual mode}(cf. Fig.\ref{fig:parse-patrol}), which allows free combination of either feature.
+To the best of the authors' knowledge, no other such framework exists that bridges the divide between AI experimentation and production integration.
 
 \begin{figure}[h]
     \centering
