@@ -14,7 +14,7 @@
 
 \section*{Introduction}
 
-Converting files, often times referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
+Converting files, oftentimes referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
 These specifications may exist at a format level, a schema level or more abstractly, an ontological one.
 Being dependent on both sides, makes parser infrastructure very brittle and expensive to maintain.
 
@@ -22,7 +22,7 @@ This is a frequent issue in (materials and chemistry) databases, where results a
 Meanwhile, as database consortia seek to structure these various schemas (and formats) into a more centralized standard, they risk breaking the output specifications of their parsers.
 In short, the community needs a robust procedure for rapdily rolling out updates to the standards and schemas down to the infrastructure implementing them.
 
-Parse-Patrol combines the best of worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
+Parse-Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
 It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp}, which has rapidly become an industry standard and is now supported by all major commercial models.
 MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes software tools, static and dynamic resources, and specially desgined system prompts.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
