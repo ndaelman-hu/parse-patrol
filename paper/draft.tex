@@ -56,7 +56,7 @@ Even so, the agent will not automatically pick up on these modules.
 We attribute this behavior to the underlying models not having been trained on a MCP/module hybrid.
 Our solution is two-pronged: we provide instructions in the relevant prompts to use the modules.
 Each parser server exposes its module path and how to call it as a resource.
-These are then compiled into a list of resources at the central server detailed above.
+These are then compiled into a list of resources at the central server.
 
 Providing such a common solution that is both a MCP sever and a module is challenging.
 Each framework has different requirements and is distributed via different channels: \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry} and \href{https://pypi.org/}{PyPi}\cite{pypi}, respectively, for example.
@@ -65,14 +65,14 @@ To the best of the authors' knowledge, no other such framework exists that bridg
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\linewidth]{figures/parse-patrol.png}
+    \includegraphics[width=0.8\linewidth]{figures/parse-patrol.png}
+    \captionsetup{width=\linewidth}
     \caption{
-    \textbf{Parse Patrol:}
-    Schematic depiction of the \textit{dual-mode} design.
-    Lower branch: Discovery mode provides a single MCP interface to several parser and database servers.
+    Schematic depiction of the \textit{dual-mode} design in Parse Patrol.
+    \textit{Lower branch:} Discovery mode provides a single MCP interface to several parser and database servers.
     The central server further exposes pre-engineered prompts for the suggested use case.
     Most hosts provide shortcuts to these prompts.
-    Upper branch: Direct Import mode exposes the same MCP components as Python modules for friction-less switching from testing to production.
+    \textit{Upper branch:} Direct Import mode exposes the same MCP components as Python modules for friction-less switching from testing to production.
     Both branches are unified under a unified architecture.
     }
     \label{fig:parse-patrol}
