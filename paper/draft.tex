@@ -1,4 +1,4 @@
-\begin{teamsubmission}{Parse Patrol}{Parse Patrol: Dual-Mode Chemistry Parsing Infrastructure via MCP Servers}
+\begin{teamsubmission}{Parse Patrol}{Parse Patrol: Dual-Mode Scientific Parsing Infrastructure via MCP Servers}
 \authorsblock{
     Nathan Daelman\textsuperscript{1}\orcidlink{0000-0002-7647-1816},
     Christina Ertural\textsuperscript{2}\orcidlink{0000-0002-7696-5824},
@@ -18,31 +18,41 @@ Converting files, oftentimes referred to as \textit{parsing}, is by its very nat
 These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
 Being dependent on both sides, makes parser infrastructure very brittle and labor-intensive to maintain.
 
-This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or code maintainer (for computations).
+This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or simulation package maintainer (for computations).
 Meanwhile, as database consortia seek to structure these various schemas and formats into a more centralized standard, they risk breaking the output specifications of their parsers.
-In short, the community needs a robust procedure for rapidly rolling out updates to the standards and schemas down to the infrastructure implementing them.
+In short, the community needs a robust procedure for rapidly rolling out updates at the standards and schemas side down to the infrastructure implementing them.
 While the FOSS nature of most scientific projects enables a wide support, the uncoordinated approach of community leaves individual projects vulnerable to source or time cuts.\cite{}
 
-The more an agent has to rely on itself, rather than its host infrastructure, the more tokens it will consume.
+Meanwhile, the rise of large language models (LLMs) has opened up new avenues for automating parser development.
+Agents powered by LLMs can theoretically be instructed to read a specification and generate a parser from scratch, largely without human intervention.
+Still, this approach too has its own limitations.
+Agentic mode consumes far more tokens than chat mode, leading to higher monetary, power, and environmental costs.\cite{}
+In the right contexts, an appropriate host environment reduces token consumption in agents.
 
-Parse Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output side via LLM.
-It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp2024}, which has rapidly become an industry standard and is now supported by all major commercial models.
-MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes several \textit{components}, listed below.
+Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a re-usable interface between agents and their environment.
+It has since rapidly become the industry standard and is now supported by all major commercial models.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
+MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes several \textit{components}:
 
 \begin{itemize}
-  \item software tools.
-  \item static and dynamic resources.
-  \item specially desgined system prompts.
+  \item software \textit{tools}.
+  \item static and dynamic \textit{resources}.
+  \item specially designed system \textit{prompts}.
 \end{itemize}
+
+In this work, we present Parse Patrol, an extensible parsing toolkit for AI and human developers alike.
+Parse Patrol combines various community parsers into a single cohesive MCP interface.
+It facilitates both (i) a discovery mode, where an agent test the various parsers out for converting to a user-defined schema,
+as well as a (ii) direct import mode, where the parsers can be called as modules from code\footnote{Depending on the programming community, these may be referred to as \textit{libraries} or \textit{packages}. We use the terminology in Python throughout}.
 
 \section*{Results}
 
-When using agentic assistants, the most state-of-the-art mode for running LLMs, there are various pitfalls that may come up:
+Parse Patrol starts from an observation about parser scripting with LLM guidance. 
+When using agentic assistants, there are various pitfalls that may come up:
 
 \begin{itemize}
-    \item Few online resources of scientific specifications, or a general lack of documentation.
-    \item Long test iteration cycles when programming an implementation from scratch.
+    \item few online resources of scientific specifications, or a general lack of documentation.
+    \item long test iteration cycles when programming an implementation from scratch.
 \end{itemize}
 
 To circumvent these hurdles we turn to well-established community parsers.
@@ -64,7 +74,7 @@ We observed ourselves that even with access to an MCP parsing server, the agent 
 These parser prototypes are often erroneous, as the agent cannot generally introspect the MCP server code itself.
 Hence, it has no access to how the community parsers are called, or even installed for that matter.
 
-Therefore, we provide the MCP tools, reserved for the exploration phase, as modules\footnote{Depending on the programming community, these may be referred to as \textit{libraries} or \textit{packages}. We use the terminology in Python throughout} too.
+Therefore, we provide the MCP tools, normally reserved for the discovery phase, as modules too.
 These can directly be called from the code.
 As modules, we can also guarantee the proper installation setup, further offloading a burden of the agent.
 
