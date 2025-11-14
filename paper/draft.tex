@@ -1,4 +1,4 @@
-\begin{teamsubmission}{Parse-Patrol}{Parse-Patrol: Dual-Mode Chemistry Parsing Infrastructure via MCP Servers}
+\begin{teamsubmission}{Parse Patrol}{Parse Patrol: Dual-Mode Chemistry Parsing Infrastructure via MCP Servers}
 \authorsblock{
     Nathan Daelman\textsuperscript{1}\orcidlink{0000-0002-7647-1816},
     Christina Ertural\textsuperscript{2}\orcidlink{0000-0002-7696-5824},
@@ -25,7 +25,7 @@ While the FOSS nature of most scientific projects enables a wide support, the un
 
 The more an agent has to rely on itself, rather than its host infrastructure, the more tokens it will consume.
 
-Parse-Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output side via LLM.
+Parse Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output side via LLM.
 It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp2024}, which has rapidly become an industry standard and is now supported by all major commercial models.
 MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes several \textit{components}, listed below.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
@@ -83,7 +83,7 @@ To the best of the authors' knowledge, no other such framework exists that bridg
     \centering
     \includegraphics[width=0.5\linewidth]{figures/parse-patrol.png}
     \caption{
-    \textbf{Parse-Patrol:}
+    \textbf{Parse Patrol:}
     The dual-mode architecture allows for user queries via discovery mode and direct Python import mode for parsing big quantum chemistry software files properly.
     }
     \label{fig:parse-patrol}
