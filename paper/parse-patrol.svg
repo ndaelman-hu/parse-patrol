@@ -240,7 +240,10 @@
        id="path23"
        inkscape:path-effect="#path-effect23"
        inkscape:original-d="m 173.29211,394.30807 c -0.17364,50.57183 -0.34728,101.14265 -0.52092,151.71549 355.50789,0.10929 711.00154,0.21858 1066.50231,0.32787"
-       sodipodi:nodetypes="ccc" /><path
+       sodipodi:nodetypes="ccc"
+       inkscape:export-filename="../../../Downloads/parse-patrol.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96" /><path
        style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#Triangle)"
        d="m 172.67834,294.08852 c 0,-20.23469 0,-40.46916 0,-60.70374 0,-20.23459 0,-40.46927 101.07454,-50.29853 101.07454,-9.82925 303.21751,-9.2527 505.36354,-8.67613"
        id="path22"
