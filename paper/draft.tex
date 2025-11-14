@@ -94,7 +94,11 @@ To the best of the authors' knowledge, no other such framework exists that bridg
     \includegraphics[width=0.5\linewidth]{figures/parse-patrol.png}
     \caption{
     \textbf{Parse Patrol:}
-    The dual-mode architecture allows for user queries via discovery mode and direct Python import mode for parsing big quantum chemistry software files properly.
+    Schematic depiction of the \textit{dual-mode} feature.
+    Lower branch: Discovery mode provides a single MCP interface to several parser and database servers.
+    The central server further exposes pre-engineered prompts for the suggested use case.
+    Most hosts provide shortcuts to these prompts.
+    Upper branch: Direct Import mode exposes the same MCP components as Python modules for friction-less switching from testing to production.
     }
     \label{fig:parse-patrol}
 \end{figure}
