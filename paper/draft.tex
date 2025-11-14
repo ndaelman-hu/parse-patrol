@@ -21,6 +21,7 @@ Being dependent on both sides, makes parser infrastructure very brittle and expe
 This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or code maintainer (for computations).
 Meanwhile, as database consortia seek to structure these various schemas (and formats) into a more centralized standard, they risk breaking the output specifications of their parsers.
 In short, the community needs a robust procedure for rapdily rolling out updates to the standards and schemas down to the infrastructure implementing them.
+While the FOSS nature of most scientific projects enables a wide support, the uncoordinated approach of community leaves individual projects vulnerable to source or time cuts.\cite{}  
 
 Parse-Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
 It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp}, which has rapidly become an industry standard and is now supported by all major commercial models.
@@ -50,7 +51,7 @@ These parser prototypes are often erroneous, as the agent cannot generally intro
 Hence, it has no access to how the community parsers are called, or even installed for that matter.
 Therefore, we bundle our server with dependency interfaces and installation setups that can be called from the code itself.
 
-Providing a common solution that is both a MCP sever and a module is not easy, as each has different requirements and is distributed via different channels: MCP Registry and PyPi, respectively, for example.
+Providing a common solution that is both a MCP sever and a module is not easy, as each has different requirements and is distributed via different channels: MCP Registry\cite{} and PyPi\cite{}, respectively, for example.
 Our second innovation, then, is the design of an architecture that supports \textit{dual mode} (cf. Fig.\ref{fig:parse-patrol}), which allows free combination of either feature.
 To the best of the authors' knowledge, no other such framework exists that bridges the divide between AI experimentation and production integration.
 
