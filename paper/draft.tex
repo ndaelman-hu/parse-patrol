@@ -32,7 +32,7 @@ In the right contexts, an appropriate host environment reduces token consumption
 Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a re-usable interface between agents and their environment.
 It has since rapidly become the industry standard and is now supported by all major commercial models.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
-MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes several \textit{components}:
+MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}:
 
 \begin{itemize}
   \item software \textit{tools}.
