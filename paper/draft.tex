@@ -15,17 +15,17 @@
 \section*{Introduction}
 
 Converting files, oftentimes referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
-These specifications may exist at a format level, a schema level or more abstractly, an ontological one.
-Being dependent on both sides, makes parser infrastructure very brittle and laborintense to maintain.
+These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
+Being dependent on both sides, makes parser infrastructure very brittle and labor-intensive to maintain.
 
 This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or code maintainer (for computations).
-Meanwhile, as database consortia seek to structure these various schemas (and formats) into a more centralized standard, they risk breaking the output specifications of their parsers.
-In short, the community needs a robust procedure for rapdily rolling out updates to the standards and schemas down to the infrastructure implementing them.
-While the FOSS nature of most scientific projects enables a wide support, the uncoordinated approach of community leaves individual projects vulnerable to source or time cuts.\cite{}  
+Meanwhile, as database consortia seek to structure these various schemas and formats into a more centralized standard, they risk breaking the output specifications of their parsers.
+In short, the community needs a robust procedure for rapidly rolling out updates to the standards and schemas down to the infrastructure implementing them.
+While the FOSS nature of most scientific projects enables a wide support, the uncoordinated approach of community leaves individual projects vulnerable to source or time cuts.\cite{}
 
 The more an agent has to rely on itself, rather than its host infrastructure, the more tokens it will consume.
 
-Parse-Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output-side via LLM.
+Parse-Patrol combines the best of both worlds, by building off publicly available community parsers and flexibly adapting their output side via LLM.
 It does so via the recently published Model Context Protocol (MCP) framework\cite{mcp}, which has rapidly become an industry standard and is now supported by all major commercial models.
 MCP defines a schema in RPC-JSON format for communication between agents and a server that exposes several \textit{components}, listed below.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
@@ -46,21 +46,21 @@ When using agentic assistants, the most state-of-the-art mode for running LLMs, 
 \end{itemize}
 
 To circumvent these hurdles we turn to well-established community parsers.
-These typically have a more restricted and speciliazed scope for a set of scientific specifications.
-Their inclusion enables fast, high-fidelity data extraction and reliable format conversion compare to a standalone agent, while also reducing hallucinations to a minimum.
+These typically have a more restricted and specialized scope for a set of scientific specifications.
+Their inclusion enables fast, high-fidelity data extraction and reliable format conversion compared to a standalone agent, while also reducing hallucinations to a minimum.
 We provide direct access to these parsers and their documentation via the MCP tools and resources, respectively.
 We can then focus on adding support for more parsers to build out a wide coverage, as well as introduce multiple options for the agent to choose from.
 
-Note that MCP does not provide any directives on how to extend the layer in a structured fashion: one by default just extends the list of tools.
-Our first technical innovation is thus to define a hiearchical protocol for extending the MCP server.
+Note that MCP does not provide any directives on how to extend the layer in a structured fashion: by default, one just extends the list of tools.
+Our first technical innovation is thus to define a hierarchical protocol for extending the MCP server.
 Each parser is treated as its own MCP server.
 This facilitates testing, as the developer can instantiate just that single server.
 All MCP components are then automatically registered to the central server, with which the user interacts.
 This server should not provide any additional tools of itself.
 It predominantly adds its own prompts, which have been engineered to immediately start up the testing phase, given a specification file and some examples.
 
-Where the MCP powers interactive testing and development, actual parsing infrastructure requires code in production.
-We observed ourselves that even with access to a MCP parsing server, the agent will without explicit prompting revert back to generating domain-specific parsers from first principles.
+Where the MCP empowers interactive testing and development, actual parsing infrastructure requires code in production.
+We observed ourselves that even with access to an MCP parsing server, the agent will -- without explicit prompting -- revert back to generating domain-specific parsers from first principles.
 These parser prototypes are often erroneous, as the agent cannot generally introspect the MCP server code itself.
 Hence, it has no access to how the community parsers are called, or even installed for that matter.
 
@@ -92,23 +92,24 @@ To the best of the authors' knowledge, no other such framework exists that bridg
 \section*{Future Work}
 
 At the time of writing, the repository is seeing active development.
-Recent additions include a streamlining of the architecture and file structure.:
+Recent additions include a streamlining of the architecture and file structure.
 Given the well-defined objective of providing a computational parsers toolkit, future extensions are not excluded.
 This project is under consideration for incorporation into NOMAD\cite{nomad_lab,draxl2019nomad} parser suite.
 
-\section*{Open-source Materials}
+\section*{Open Source Materials}
 
-The open-source code is available on GitHub: \github{https://github.com/ndaelman-hu/parse-patrol}. 
+The open source code is available on GitHub: \github{https://github.com/ndaelman-hu/parse-patrol}. 
 A demo video is available on YouTube: \youtube{https://www.youtube.com/watch?v=fSAyi5ubkR0}.
 
 \section*{Author Contributions}
 
-\textbf{N.D.}: Conceptualization, Software, Original Code Draft, Visualization, Writing - Editing,
+\textbf{N.D.}: Conceptualization, Software, Original Code Draft, Visualization, Writing - Editing
 \textbf{C.E.}: Conceptualization Revision, Software, Visualization, Video Editing, Writing - Original Manuscript Text Draft, Figure, Editing
-\textbf{R.M.}: Implementation asynchronous servers, Extension Testing Infrastructure - Conceptualization Revision 
+\textbf{R.M.}: Implementation asynchronous servers, Extension Testing Infrastructure - Conceptualization Revision
 \textbf{S.K.}: Rollout Parser Support 
 
 \section*{Acknowledgements}
 The authors thank for their financial support the NFDI consortium FAIRmat, funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) in project 460197019.
 
 \end{teamsubmission}
+    
