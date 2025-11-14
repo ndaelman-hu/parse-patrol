@@ -14,72 +14,68 @@
 
 \section*{Introduction}
 
-Converting files, oftentimes referred to as \textit{parsing}, is by its very nature dependent on the input and output specifications.
+Parsing scientific output files to extract structured data is by its very nature dependent on the input and output specifications.
 These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
 Being dependent on both sides, makes parser infrastructure very brittle and labor-intensive to maintain.
 
-This is a frequent issue in (materials and chemistry) databases, where results are uploaded in the native specifications of the hardware provider (for experiments), or simulation package maintainer (for computations).
-Meanwhile, as database consortia seek to structure these various schemas and formats into a more centralized standard, they risk breaking the output specifications of their parsers.
-In short, the community needs a robust procedure for rapidly rolling out updates at the standards and schemas side down to the infrastructure implementing them.
-While the FOSS nature of most scientific projects enables a wide support, the uncoordinated approach of community leaves individual projects vulnerable to source or time cuts.\cite{}
+This is a frequent issue in (materials and chemistry) databases and consortia.
+As they seek to structure these various schemas and formats into a more centralized standard, they risk breaking the output specifications of their parsers.
+The community needs a robust procedure for rapidly rolling out updates at the standards and schemas side down to the infrastructure implementing them.
+Furthermore, the uncoordinated approach of the community leaves individual projects vulnerable to funding or time cuts.\cite{}
 
 Meanwhile, the rise of large language models (LLMs) has opened up new avenues for automating parser development.
-Agents powered by LLMs can theoretically be instructed to read a specification and generate a parser from scratch, largely without human intervention.
-Still, this approach too has its own limitations.
-Agentic mode consumes far more tokens than chat mode, leading to higher monetary, power, and environmental costs.\cite{}
-In the right contexts, an appropriate host environment reduces token consumption in agents.
-
-Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a re-usable interface between agents and their environment.
+Modern host environments, like IDEs, supply their LLM agents with testing, research, and other development tools.
+Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a general-purpose, host-agnostic interface for such toolkits.
 It has since rapidly become the industry standard and is now supported by all major commercial models.
-This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
 MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}: software \textit{tools}, static and dynamic \textit{resources}, and specially designed system \textit{prompts}.
 
 In this work, we present Parse Patrol, an extensible parsing toolkit for AI and human developers alike.
-Parse Patrol combines various community parsers into a single cohesive MCP interface.
+Parse Patrol takes advantage of MCP to integrate various community parsers into a single access point.
 It facilitates both (i) a discovery mode, where an agent test the various parsers out for converting to a user-defined schema,
 as well as a (ii) direct import mode, where the parsers can be called as modules from code.
 
 \section*{Results}
 
-Parse Patrol starts from an observation about parser scripting with LLM guidance. 
-When using agentic assistants, there are various pitfalls that may come up.
+Parse Patrol starts from observing automated parser scripting and the various pitfalls that may arise.
 The lack of online resources for scientific specifications will impede any on-the-fly research.
-A developer will now have to turn to RAG an build out their own knowledgebase first.
-When a request falls outside this knowledgebase, the model is still likely to hallucinate answers.
+A developer will now have to turn to Retrieval-Augmented Generation and build out their own knowledgebase first.
+When a request falls outside its scope, the model is still liable to hallucinate answers.
 Even with the appropriate context, agents often require long test iteration cycles before settling on a working prototype.
 Finally, agents are prone to radically overhauling the software architecture.
 
 To circumvent these hurdles we turn to specialized community parsers.
 Their inclusion enables fast, high-fidelity data extraction and reliable format conversion
 We provide direct access to these parsers and their documentation via the MCP tools and resources, respectively.
-We can then focus on adding support for more parsers to build out a wide coverage, as well as introduce multiple options for the agent to choose from.
+This allows the project developers to focus on building out a wide coverage.
+Not only does this cover more specifications, but it also introduces multiple synergetic design options.
 
 Note that MCP does not provide any directives on how to extend the layer in a structured fashion: by default, one just extends the list of tools.
 Our first technical innovation is thus to define a hierarchical protocol for extending the MCP server.
 Each parser is treated as its own MCP server.
 This facilitates testing, as the developer can instantiate just that single server.
-All MCP components are then automatically registered to the central server, with which the user interacts.
-This server should not provide any additional tools of itself.
-It predominantly adds its own prompts, which have been engineered to immediately start up the testing phase, given a specification file and some examples.
+All MCP components are then automatically registered to the central, user-facing server.
+This server predominantly adds its own engineered prompts for deploying tests or production.
+Specifications are provided directly in the chat or as a separate file.
+Test cases can be downloaded via database MCP servers.
+At the time of writing, Parse Patrol only supports downloads from NOMAD-lab\cite{nomad_lab,draxl2019nomad}.
 
 Where the MCP empowers interactive testing and development, actual parsing infrastructure requires code in production.
 We observed ourselves that even with access to an MCP parsing server, the agent will -- without explicit prompting -- revert back to generating domain-specific parsers from first principles.
-These parser prototypes are often erroneous, as the agent cannot generally introspect the MCP server code itself.
-Hence, it has no access to how the community parsers are called, or even installed for that matter.
+Doing so, it may fall back on to its training or online research how 
+Alternatively, it may attempt to find the installation path of the MCP server code itself and use it as a template.
 
-Therefore, we provide the MCP tools, normally reserved for the discovery phase, as modules too.
-These can directly be called from the code.
-As modules, we can also guarantee the proper installation setup, further offloading a burden of the agent.
+Therefore, we provide the MCP tools, normally reserved for the discovery phase, as code modules too.
+As modules, we also guarantee their installation setup, further offloading a burden of the agent.
 
 Even so, the agent will not automatically pick up on these modules.
 We attribute this behavior to the underlying models not having been trained on a MCP/module hybrid.
-Our solution is two-pronged: we provide instructions in the "\\script" prompt to use the modules.
+Our solution is two-pronged: we provide instructions in the relevant prompts to use the modules.
 Each parser server exposes its module path and how to call it as a resource.
 These are then compiled into a list of resources at the central server detailed above.
 
 Providing such a common solution that is both a MCP sever and a module is not easy.
 Each framework has different requirements and is distributed via different channels: \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry} and \href{https://pypi.org/}{PyPi}\cite{pypi}, respectively, for example.
-Our second innovation, then, is the design of an architecture that supports \textit{dual mode} (cf. Fig.\ref{fig:parse-patrol}), which allows free combination of either feature.
+Our second innovation, then, is the design of a \textit{dual mode} (cf. Fig.\ref{fig:parse-patrol}) that facilitates the free combination of either feature.
 To the best of the authors' knowledge, no other such framework exists that bridges the divide between AI experimentation and production integration.
 
 \begin{figure}[h]
@@ -100,9 +96,9 @@ To the best of the authors' knowledge, no other such framework exists that bridg
 \section*{Future Work}
 
 At the time of writing, the repository is seeing active development.
-Recent additions include a streamlining of the architecture and file structure.
+Recent additions include automated registration of all the subservers.
 Given the well-defined objective of providing a computational parsers toolkit, future extensions are not excluded.
-This project is under consideration for incorporation into NOMAD\cite{nomad_lab,draxl2019nomad} parser suite.
+This project is under consideration for incorporation into NOMAD parser suite.
 
 \section*{Open Source Materials}
 
