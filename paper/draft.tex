@@ -32,32 +32,25 @@ In the right contexts, an appropriate host environment reduces token consumption
 Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a re-usable interface between agents and their environment.
 It has since rapidly become the industry standard and is now supported by all major commercial models.
 This specification is both model- and host- (e.g. IDEs, cloud suppliers) agnostic, meaning that it can readily be rolled out to any platform.
-MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}:
-
-\begin{itemize}
-  \item software \textit{tools}.
-  \item static and dynamic \textit{resources}.
-  \item specially designed system \textit{prompts}.
-\end{itemize}
+MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}: software \textit{tools}, static and dynamic \textit{resources}, and specially designed system \textit{prompts}.
 
 In this work, we present Parse Patrol, an extensible parsing toolkit for AI and human developers alike.
 Parse Patrol combines various community parsers into a single cohesive MCP interface.
 It facilitates both (i) a discovery mode, where an agent test the various parsers out for converting to a user-defined schema,
-as well as a (ii) direct import mode, where the parsers can be called as modules from code\footnote{Depending on the programming community, these may be referred to as \textit{libraries} or \textit{packages}. We use the terminology in Python throughout}.
+as well as a (ii) direct import mode, where the parsers can be called as modules from code.
 
 \section*{Results}
 
 Parse Patrol starts from an observation about parser scripting with LLM guidance. 
-When using agentic assistants, there are various pitfalls that may come up:
+When using agentic assistants, there are various pitfalls that may come up.
+The lack of online resources for scientific specifications will impede any on-the-fly research.
+A developer will now have to turn to RAG an build out their own knowledgebase first.
+When a request falls outside this knowledgebase, the model is still likely to hallucinate answers.
+Even with the appropriate context, agents often require long test iteration cycles before settling on a working prototype.
+Finally, agents are prone to radically overhauling the software architecture.
 
-\begin{itemize}
-    \item few online resources of scientific specifications, or a general lack of documentation.
-    \item long test iteration cycles when programming an implementation from scratch.
-\end{itemize}
-
-To circumvent these hurdles we turn to well-established community parsers.
-These typically have a more restricted and specialized scope for a set of scientific specifications.
-Their inclusion enables fast, high-fidelity data extraction and reliable format conversion compared to a standalone agent, while also reducing hallucinations to a minimum.
+To circumvent these hurdles we turn to specialized community parsers.
+Their inclusion enables fast, high-fidelity data extraction and reliable format conversion
 We provide direct access to these parsers and their documentation via the MCP tools and resources, respectively.
 We can then focus on adding support for more parsers to build out a wide coverage, as well as introduce multiple options for the agent to choose from.
 
