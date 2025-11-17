@@ -33,8 +33,8 @@ and (ii) Direct Import Mode, where the same parsers are available as Python modu
 \section*{Results}
 
 Automated parser generation faces several pitfalls:
-scarce online resources for scientific specifications, model hallucinations outside training data, lengthy test iterations, and unstable software architectures.
-Parse Patrol sidesteps these issues by leveraging community parsers, focusing instead on widening the specification coverage and design options.
+scarce documentation for scientific specifications, model hallucinations outside training data, lengthy test iterations, and unstable software architectures.
+Parse Patrol sidesteps these issues by leveraging community parsers, focusing instead on widening the source specification coverage and design options.
 Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
 
 MCP, however, does not prescribe how to organize tools: by default, servers simply expose a flat list of tools.
@@ -60,10 +60,10 @@ To the best of the authors' knowledge, no other framework provides this dual-mod
     \captionsetup{width=\linewidth}
     \caption{
     Schematic depiction of the \textit{dual-mode} design in Parse Patrol.
-    \textbf{Lower branch:} Discovery mode provides a single MCP interface to several parser and database servers.
-    The central server further exposes prompts for the suggested use case.
-    \textbf{Upper branch:} Direct Import mode exposes the same MCP components as Python modules for friction-less switching from testing to production.
-    Both branches are unified under a single architecture.
+    \textbf{Lower branch:} Discovery Mode provides a single MCP interface to several parser and database servers.
+    An agent will use these to experiment with designing a parser conforming to the user-defined target specifications.
+    \textbf{Upper branch:} Direct Import Mode exposes these same tools as Python modules for friction-less implementation based on the approaches learned during Discovery.
+    \textbf{Both branches} are unified under a single architecture.
     }
     \label{fig:parse-patrol}
 \end{figure}
