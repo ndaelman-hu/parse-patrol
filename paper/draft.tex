@@ -38,7 +38,7 @@ Parse Patrol sidesteps these issues by leveraging community parsers, focusing in
 Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
 
 MCP, however, does not prescribe how to organize tools: by default, servers simply expose a flat list of tools.
-Our first technical innovation is to define a \textit{hierarchical protocol} for structuring the MCP server.
+To address this, we define a \textit{hierarchical protocol} for structuring the MCP server.
 Each parser is implemented as its own independent MCP server, which enables targeted feature development and testing.
 These individual servers' components are then automatically registered with a central, user-facing server.
 The central server aggregates all parser tools and resources, then adds prompts for test deployment and production workflows.
@@ -48,8 +48,8 @@ While MCP tools enable interactive testing and one-off parsing tasks, bulk proce
 Parse Patrol addresses this by exposing the same parser both as an MCP server and as a Python module.
 To ensure agents leverage these modules when writing code, we employ a two-pronged approach: prompts provide usage instructions, while each parser server exposes its module path and import syntax as an MCP resource.
 
-Implementing this dual-mode design (cf. Fig.\ref{fig:parse-patrol}) is challenging, as MCP servers and Python packages have different distribution requirements.
-MCP servers are typically registered in the \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry}, while Python packages are distributed via \href{https://pypi.org/}{PyPi}\cite{pypi}.
+Implementing this \textit{dual-mode design} (cf. Fig.\ref{fig:parse-patrol}) is challenging, as MCP servers and Python packages have different distribution requirements.
+While the former are typically registered in the \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry}, the latter are distributed via \href{https://pypi.org/}{PyPi}\cite{pypi}.
 Parse Patrol bridges this divide by maintaining a unified codebase that satisfies both frameworks' requirements, where each tool's schema serves both modes.
 This ensures the tool interfaces evolve with use in both contexts.
 To the best of the authors' knowledge, no other framework provides this dual-mode capability.
