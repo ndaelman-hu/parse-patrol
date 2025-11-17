@@ -14,57 +14,46 @@
 
 \section*{Introduction}
 
-Parsing scientific output files to extract structured data is by its very nature dependent on the input and output (I/O) specifications.
+Parsing scientific output files to extract structured data is by its very nature dependent on input and output (I/O) specifications.
 These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
-Being dependent on I/O toghether makes parser infrastructure very brittle and labor-intensive to maintain.
-This is a frequent issue in materials and chemistry databases and consortia.
-Centralizing standards risks breaking existing parsers, while the uncoordinated community approach leaves projects vulnerable to funding cuts.\cite{best_of_atomistic_ml_general} 
+This dependency makes parser infrastructure very brittle and labor-intensive to maintain, as changes to either input formats or output schemas require updating parsers accordingly.
+This is a frequent issue in materials and chemistry databases and consortia. 
 
-Meanwhile, the rise of large language models (LLMs) has opened up new avenues for automating parser development. The complexity in centralizing parser infrastructure has created a natural opportunity for LLM-assisted tooling, since modern models can reason over heterogeneous file formats and dynamically adapt to evolving specifications.
-Modern host environments, like IDEs, supply their LLM agents with testing, research, and other development tools.
-However, effective use of LLMs requires a reliable interface for connecting models to external tools. MCP provides exactly this mechanism by standardizing how agents discover, invoke, and coordinate such tools.
-Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a general-purpose, host-agnostic interface for such toolkits.
+The rise of large language models (LLMs) has opened up new avenues for automating parser development, as modern models can reason over heterogeneous file formats and dynamically adapt to evolving specifications.
+However, effective use of LLMs requires a reliable interface for connecting models to external tools.
+Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, providing a standardized interface for agents to discover and invoke external tools, access resources, and use pre-engineered prompts\cite{mcp_def}.
 It has since rapidly become the industry standard and is now supported by all major commercial models.
-  MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}: software \textit{tools}, static and dynamic \textit{resources}, and specially designed system \textit{prompts}.\cite{mcp_def}
-In simple terms, MCP tells an AI agent how to request and use pre-defined tools, resources, and system instructions from a server.
 
-In this work, we present Parse Patrol, an AI-driven toolkit for rapdily building, testing, and deploying high-quality parser conform with the user's target specification.
-Parse Patrol takes advantage of MCP to integrate various community parsers into a single access point for an LLM agent.
-The same repository supports a two different usage modes:
-(i) a \textit{discovery mode}, where an agent tests various parsers for converting inputs/instructions to a user-defined schema;
-  as well as (ii) a \textit{direct import mode}, where the parsers can be called as modules from code.
+In this work, we present Parse Patrol, an AI-assisted workflow for rapidly discovering, testing, and deploying parsers that conform to user-defined specifications.
+Parse Patrol leverages MCP to integrate community parsers into a unified interface, enabling agents to iteratively evaluate parser options against target schemas.
+The same infrastructure supports two usage modes:
+(i) \textit{discovery mode}, where an agent interactively tests parsers for schema conversion;
+and (ii) \textit{direct import mode}, where the same parsers are available as Python modules for production code.
 
 \section*{Results}
 
 Automated parser generation faces several pitfalls:
 scarce online resources for scientific specifications, model hallucinations outside training data, lengthy test iterations, and unstable software architectures.
 Parse Patrol outsources these issues to community parsers, focusing instead on widening the specification coverage and design options.
-Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing LLM agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
+Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
 
-Note that MCP does not provide any directives on how to structure tool organization: by default, one just extends the list of tools.
-Our first technical innovation is thus to define a \textit{hierarchical protocol} for extending the MCP server.
-Each parser is treated as its own MCP server.
-This facilitates testing, as the developer can instantiate just that single server.
-All MCP components are then automatically registered to the central, user-facing server.
-This server predominantly adds its own engineered prompts for deploying tests or production.
-Specifications are provided directly in the chat or as a separate file.
-Test cases can be downloaded via database MCP servers.
+MCP does not prescribe how to organize tools: by default, servers simply expose a flat list of tools.
+Our first technical innovation is to define a \textit{hierarchical protocol} for structuring the MCP server.
+Each parser is implemented as its own independent MCP server, which enables targeted feature development and testing.
+These individual parser servers are then automatically registered with a central, user-facing server.
+The central server aggregates all parser tools and adds engineered prompts for test deployment and production workflows.
+Specifications are provided directly in the chat or as separate files, while test cases can be retrieved via database MCP servers.
 
-While MCP enables interactive testing or one-off usage, production and en masse processing require actual code artifacts.
-We found that agents are biased towards writing parsers from scratch or attempting to locate MCP installation paths as a reference.
-Since we want the agent to leverage the MCP tools directly in the software it writes, we present the tools as code modules too.
-As such, we furthermore guarantee their installation setup, further offloading a burden of the agent.
+While MCP tools enable interactive testing and one-off parsing tasks, bulk processing and production workflows require importable Python modules.
+Parse Patrol addresses this by exposing each parser both as an MCP server and as a Python module.
+To ensure agents leverage these modules when writing code, we employ a two-pronged approach: engineered prompts provide usage instructions, while each parser server exposes its module path and import syntax as an MCP resource.
+These resources are compiled at the central server for easy discovery.
 
-Even so, the agent will not automatically pick up on these modules.
-We attribute this behavior to the underlying models not having been trained on a MCP/module hybrid.
-Our solution is two-pronged: we provide instructions in the relevant prompts to use the modules.
-Each parser server exposes its module path and how to call it as a resource.
-These are then compiled into a list of resources at the central server.
-
-Providing such a common solution that is both a MCP server and a module is challenging.
-Each framework has different requirements and is distributed via different channels: \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry} and \href{https://pypi.org/}{PyPi}\cite{pypi}, respectively, for example.
-Our second innovation, then, is the design of a \textit{dual mode} (cf. Fig.\ref{fig:parse-patrol}) that facilitates the free combination of either feature.
-To the best of the authors' knowledge, no other such framework exists that bridges the divide between AI experimentation and production integration.
+Implementing this dual-mode design (cf. Fig.\ref{fig:parse-patrol}) is challenging, as MCP servers and Python packages have different distribution requirements.
+MCP servers are typically registered in the \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry}, while Python packages are distributed via \href{https://pypi.org/}{PyPi}\cite{pypi}.
+Parse Patrol bridges this divide by maintaining a unified codebase that satisfies both frameworks' requirements.
+This allows seamless transitions from agent-assisted experimentation to production integration.
+To the best of the authors' knowledge, no other framework provides this dual-mode capability.
 
 \begin{figure}[h]
     \centering
