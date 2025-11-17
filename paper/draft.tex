@@ -14,15 +14,15 @@
 
 \section*{Introduction}
 
-Parsing scientific output files to extract structured data is by its very nature dependent on input and output (I/O) specifications.
+Parsing scientific files to extract structured data depends strongly on specifications.
 These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
-This dependency makes parser infrastructure very brittle and labor-intensive to maintain, as changes to either input formats or output schemas require updating parsers accordingly.
+This dependency makes parser infrastructure very brittle and labor-intensive to maintain, as changes to either source or target specifications require updating parsers accordingly.
 This is a frequent issue in materials and chemistry databases and consortia. 
 
 The rise of large language models (LLMs) has opened up new avenues for automating parser development, as modern models can reason over heterogeneous file formats and dynamically adapt to evolving specifications.
 However, effective use of LLMs requires a reliable interface for connecting models to external tools.
 Anthropic published the Model Context Protocol (MCP) in late 2024\cite{mcp2024}, providing a standardized interface for agents to discover and invoke external tools, access resources, and use predefined prompts\cite{mcp_def}.
-It has since rapidly become the industry standard and is now supported by all major commercial models.
+It has since become the industry standard supported by all major commercial models.
 
 In this work, we present Parse Patrol, an AI-assisted workflow for rapidly discovering, testing, and deploying parsers that conform to user-defined specifications.
 Parse Patrol leverages MCP to integrate community parsers into a unified interface, enabling agents to iteratively evaluate parser options against target schemas.
@@ -34,25 +34,24 @@ and (ii) Direct Import Mode, where the same parsers are available as Python modu
 
 Automated parser generation faces several pitfalls:
 scarce online resources for scientific specifications, model hallucinations outside training data, lengthy test iterations, and unstable software architectures.
-Parse Patrol outsources these issues to community parsers, focusing instead on widening the specification coverage and design options.
+Parse Patrol sidesteps these issues by leveraging community parsers, focusing instead on widening the specification coverage and design options.
 Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
 
-MCP does not prescribe how to organize tools: by default, servers simply expose a flat list of tools.
+MCP, however, does not prescribe how to organize tools: by default, servers simply expose a flat list of tools.
 Our first technical innovation is to define a \textit{hierarchical protocol} for structuring the MCP server.
 Each parser is implemented as its own independent MCP server, which enables targeted feature development and testing.
-These individual parser servers are then automatically registered with a central, user-facing server.
-The central server aggregates all parser tools and adds prompts for test deployment and production workflows.
-Specifications are provided directly in the chat or as separate files, while test cases can be retrieved via database MCP servers.
+These individual servers' components are then automatically registered with a central, user-facing server.
+The central server aggregates all parser tools and resources, then adds prompts for test deployment and production workflows.
+The user provides specifications either directly in the chat or as separate files, while test cases can be retrieved via database MCP servers.
 
-While MCP tools enable interactive testing and one-off parsing tasks, bulk processing and production workflows require importable Python modules.
-Parse Patrol addresses this by exposing each parser both as an MCP server and as a Python module.
+While MCP tools enable interactive testing and one-off parsing tasks, bulk processing and production workflows require importable modules.
+Parse Patrol addresses this by exposing the same parser both as an MCP server and as a Python module.
 To ensure agents leverage these modules when writing code, we employ a two-pronged approach: prompts provide usage instructions, while each parser server exposes its module path and import syntax as an MCP resource.
-These resources are compiled at the central server for easy discovery.
 
 Implementing this dual-mode design (cf. Fig.\ref{fig:parse-patrol}) is challenging, as MCP servers and Python packages have different distribution requirements.
 MCP servers are typically registered in the \href{https://github.com/modelcontextprotocol/servers}{MCP Registry}\cite{mcp2024registry}, while Python packages are distributed via \href{https://pypi.org/}{PyPi}\cite{pypi}.
-Parse Patrol bridges this divide by maintaining a unified codebase that satisfies both frameworks' requirements.
-This allows seamless transitions from agent-assisted experimentation to production integration.
+Parse Patrol bridges this divide by maintaining a unified codebase that satisfies both frameworks' requirements, where each tool's schema serves both modes.
+This ensures the tool interfaces evolve with use in both contexts.
 To the best of the authors' knowledge, no other framework provides this dual-mode capability.
 
 \begin{figure}[h]
@@ -77,7 +76,7 @@ This project is under consideration for incorporation into NOMAD parser suite\ci
 
 \section*{Open Source Materials}
 
-The open source code is available on GitHub (\texttt{main} branch, i.e. latest development version): \github{https://github.com/ndaelman-hu/parse-patrol}. For stable releases, consult the version tags. Submitted version for the hackathon: \texttt{v0.0.2-beta}.
+The open source code is available on GitHub: \github{https://github.com/ndaelman-hu/parse-patrol} (latest development version). For stable releases, consult the version tags. Submitted version for the hackathon: \texttt{v0.0.2-beta}.
 A demo video is available on YouTube: \youtube{https://www.youtube.com/watch?v=fSAyi5ubkR0}.
 
 \section*{Author Contributions}
