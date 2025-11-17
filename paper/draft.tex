@@ -14,9 +14,9 @@
 
 \section*{Introduction}
 
-Parsing scientific output files to extract structured data is by its very nature dependent on the input and output specifications.
+Parsing scientific output files to extract structured data is by its very nature dependent on the input and output (I/O) specifications.
 These specifications may exist at a format level, a schema level, or more abstractly, an ontological one.
-Being dependent on both sides, makes parser infrastructure very brittle and labor-intensive to maintain.
+Being dependent on I/O toghether makes parser infrastructure very brittle and labor-intensive to maintain.
 This is a frequent issue in materials and chemistry databases and consortia.
 Centralizing standards risks breaking existing parsers, while the uncoordinated community approach leaves projects vulnerable to funding cuts.\cite{best_of_atomistic_ml_general} 
 
@@ -25,18 +25,21 @@ Modern host environments, like IDEs, supply their LLM agents with testing, resea
 However, effective use of LLMs requires a reliable interface for connecting models to external tools. MCP provides exactly this mechanism by standardizing how agents discover, invoke, and coordinate such tools.
 Anthropic published the Model Context Protocol (MCP)\cite{mcp2024} late last year, defining a general-purpose, host-agnostic interface for such toolkits.
 It has since rapidly become the industry standard and is now supported by all major commercial models.
-MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}: software \textit{tools}, static and dynamic \textit{resources}, and specially designed system \textit{prompts}. In simple terms, MCP tells an AI agent how to request and use pre-defined tools, resources, and system instructions from a server.
+  MCP defines a schema in JSON-RPC 2.0 format for communication between agents and a server that exposes several \textit{components}: software \textit{tools}, static and dynamic \textit{resources}, and specially designed system \textit{prompts}.\cite{mcp_def}
+In simple terms, MCP tells an AI agent how to request and use pre-defined tools, resources, and system instructions from a server.
 
-In this work, we present Parse Patrol, an extensible parsing toolkit for AI and human developers alike.
-Parse Patrol takes advantage of MCP to integrate various community parsers into a single access point.
-It facilitates both (i) a discovery mode, where an agent tests various parsers for converting inputs/instructions to a user-defined schema,
-as well as (ii) a direct import mode, where the parsers can be called as modules from code.
+In this work, we present Parse Patrol, an AI-driven toolkit for rapdily building, testing, and deploying high-quality parser conform with the user's target specification.
+Parse Patrol takes advantage of MCP to integrate various community parsers into a single access point for an LLM agent.
+The same repository supports a two different usage modes:
+(i) a \textit{discovery mode}, where an agent tests various parsers for converting inputs/instructions to a user-defined schema;
+  as well as (ii) a \textit{direct import mode}, where the parsers can be called as modules from code.
 
 \section*{Results}
 
 Automated parser generation faces several pitfalls:
 scarce online resources for scientific specifications, model hallucinations outside training data, lengthy test iterations, and unstable software architectures.
-Parse Patrol addresses these issues by providing MCP-based access to specialized community parsers and their documentation, enabling wide specification coverage with multiple design options. Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing LLM agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
+Parse Patrol outsources these issues to community parsers, focusing instead on widening the specification coverage and design options.
+Because MCP provides a uniform, model-agnostic interface for invoking software tools, individual parsers can be exposed as MCP tools, allowing LLM agents to orchestrate them seamlessly during parser selection, testing, and schema conversion.
 
 Note that MCP does not provide any directives on how to structure tool organization: by default, one just extends the list of tools.
 Our first technical innovation is thus to define a \textit{hierarchical protocol} for extending the MCP server.
@@ -47,10 +50,10 @@ This server predominantly adds its own engineered prompts for deploying tests or
 Specifications are provided directly in the chat or as a separate file.
 Test cases can be downloaded via database MCP servers.
 
-While MCP enables interactive testing or one-off usage, production and en masse processing require actual code.
-Without explicit prompting, agents generate parsers from scratch rather than using MCP servers, relying on training data or attempting to locate MCP installation paths.
-Therefore, we provide the MCP tools, normally reserved for the discovery phase, as code modules too.
-As modules, we also guarantee their installation setup, further offloading a burden of the agent.
+While MCP enables interactive testing or one-off usage, production and en masse processing require actual code artifacts.
+We found that agents are biased towards writing parsers from scratch or attempting to locate MCP installation paths as a reference.
+Since we want the agent to leverage the MCP tools directly in the software it writes, we present the tools as code modules too.
+As such, we furthermore guarantee their installation setup, further offloading a burden of the agent.
 
 Even so, the agent will not automatically pick up on these modules.
 We attribute this behavior to the underlying models not having been trained on a MCP/module hybrid.
@@ -86,7 +89,7 @@ This project is under consideration for incorporation into NOMAD parser suite\ci
 
 \section*{Open Source Materials}
 
-The open source code is available on GitHub: \github{https://github.com/ndaelman-hu/parse-patrol}. 
+The open source code is available on GitHub (\texttt{main} branch, i.e. latest development version): \github{https://github.com/ndaelman-hu/parse-patrol}. For stable releases, consult the version tags. Submitted version for the hackathon: \texttt{v0.0.2-beta}.
 A demo video is available on YouTube: \youtube{https://www.youtube.com/watch?v=fSAyi5ubkR0}.
 
 \section*{Author Contributions}
