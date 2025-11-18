@@ -23,7 +23,7 @@ Herein, they rely on (potentially outdated) knowledge or on-the-fly research abo
 Hence, this process leads to a prolonged test cycles where the final results may vary in quality.
 
 With dual-mode, the same infrastructure is used in testing and scripting, enabling a *try before you buy* workflow for AI tools.
-The community parsers can now act both as tools presented via the MCP protocol, or as plain code dependencies.
+The community parsers can now act both as tools presented via the [Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro), or as plain code dependencies.
 As a developer, you can casually brainstorm and test various parsers with your AI, before settling on a design for your high-volume script.
 All MCP tools come with documentation that explains (to any client agent) how to both execute them and call them for usage within an autonomously written piece of code.
 
