@@ -54,17 +54,17 @@ def register_parsers():
             module = import_module(config["module"], package=__package__)
             
             # Register tools
-            for tool_name in getattr(config, "tools", []):
+            for tool_name in config.get("tools", []):
                 tool_func = getattr(module, tool_name)
                 mcp.tool()(tool_func)
 
             # Register resources
-            for resource_name in getattr(config, "resources", []):
+            for resource_name in config.get("resources", []):
                 resource_func = getattr(module, resource_name)
                 mcp.resource(f"{RESOURCE_PREFIX}{resource_name.replace('_', '/')}")(resource_func)
 
             # Register prompts
-            for prompt_name in getattr(config, "prompts", []):
+            for prompt_name in config.get("prompts", []):
                 prompt_func = getattr(module, prompt_name)
                 mcp.prompt()(prompt_func)
             
