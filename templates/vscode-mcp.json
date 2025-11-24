@@ -5,7 +5,8 @@
       "args": ["run", "python", "-m", "parse_patrol"],
       "cwd": "${workspaceFolder}",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src"
+        "PYTHONPATH": "${workspaceFolder}/src",
+        "PYTHONWARNINGS": "ignore::SyntaxWarning"
       }
     }
   }
