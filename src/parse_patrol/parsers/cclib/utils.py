@@ -3,7 +3,7 @@ Core CCLib parsing functionality for direct Python usage.
 This module provides sync functions that can be imported and used directly.
 """
 
-from . import cclib
+from . import external_cclib
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
@@ -93,7 +93,7 @@ class CCDataModel(BaseModel):
     zpve: Optional[float] = Field(None, description="Zero-point vibrational energy correction (hartree/particle, float)")
 
 
-def ccdata_to_model(ccdata: cclib.parser.data.ccData, filepath: str = None) -> CCDataModel:  # type: ignore
+def ccdata_to_model(ccdata: external_cclib.parser.data.ccData, filepath: str = None) -> CCDataModel:  # type: ignore
     """Convert ccData object to CCDataModel (Pydantic) format.
     
     Args:
@@ -151,7 +151,7 @@ def cclib_parse(filepath: str) -> CCDataModel:
         FileNotFoundError: If file cannot be opened
         ValueError: If file cannot be parsed
     """
-    filereader = cclib.io.ccopen(filepath)  # type: ignore
+    filereader = external_cclib.io.ccopen(filepath)  # type: ignore
     if filereader is None:
         raise FileNotFoundError(f"File not found or unsupported format: {filepath}")
     
