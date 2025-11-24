@@ -3,7 +3,7 @@ Core CCLib parsing functionality for direct Python usage.
 This module provides sync functions that can be imported and used directly.
 """
 
-import cclib
+from . import cclib
 from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
