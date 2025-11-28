@@ -204,6 +204,65 @@ Once the servers passes the checks, register the new MCP server:
 
 For running or adding tests, as well as contributing to the official repository, see `./tests/README.md`.
 
+### Warning Suppression for Dependencies
+
+Some third-party dependencies (like cclib) may emit warnings during compilation or runtime. Here's how to suppress them:
+
+#### For MCP Server Usage (Compile-time warnings)
+
+Warnings like `SyntaxWarning` occur when Python compiles source files. To suppress them, set the `PYTHONWARNINGS` environment variable in your MCP configuration:
+
+```json
+{
+  "servers": {
+    "parse-patrol": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "parse_patrol"],
+      "env": {
+        "PYTHONWARNINGS": "ignore::SyntaxWarning"
+      }
+    }
+  }
+}
+```
+
+This is already configured in all template files under `templates/`.
+
+#### For Direct Python Usage (Runtime warnings)
+
+For runtime warnings when using parsers as direct dependencies, parse-patrol includes specialized `__init__.py` files in parser modules (e.g., `src/parse_patrol/parsers/cclib/__init__.py`) that automatically suppress known dependency warnings before imports.
+
+If you need additional suppression in your own scripts, use Python's warnings module:
+
+```python
+import warnings
+warnings.filterwarnings("ignore", category=SyntaxWarning)
+
+from parse_patrol import cclib_parse
+```
+
+Alternatively, set the environment variable before running your script:
+
+```bash
+export PYTHONWARNINGS="ignore::SyntaxWarning"
+python your_script.py
+```
+
+#### For pytest (Test suite)
+
+Warning filters are configured in `pyproject.toml`:
+
+```toml
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::SyntaxWarning",
+]
+```
+
+This ensures tests run cleanly without noise from dependency warnings.
+
 ## Online Resources
 
 The following links explain the basics of MCP, including the distinction between *tools*, *resources*, and *prompts*. **Make sure to respect these distinctions!**

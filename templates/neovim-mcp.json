@@ -5,7 +5,8 @@
       "args": ["run", "python", "-m", "parse_patrol"],
       "cwd": "/path/to/parse-patrol",
       "env": {
-        "PYTHONPATH": "/path/to/parse-patrol/src"
+        "PYTHONPATH": "/path/to/parse-patrol/src",
+        "PYTHONWARNINGS": "ignore::SyntaxWarning"
       }
     }
   }
