@@ -11,9 +11,12 @@ class ASEDataModel(BaseModel):
     detected_software: Optional[str] = Field(None, description="Detected quantum chemistry software package")
 
     # Core structural properties
+    natom: Optional[int] = Field(None, description="Number of atoms (integer)")
     positions: Optional[List[List[float]]] = Field(None, description="Cartesian coordinates of atoms (Angstrom, array of shape N x 3)")
+    scaled_positions: Optional[List[List[float]]] = Field(None, description="Fractional coordinates within unit cell (array of shape N x 3)")
     numbers: Optional[List[int]] = Field(None, description="Atomic numbers (array of shape N)")
     symbols: Optional[List[str]] = Field(None, description="Chemical element symbols (array of shape N)")
+    chemical_formula: Optional[str] = Field(None, description="Chemical formula string")
     masses: Optional[List[float]] = Field(None, description="Atomic masses (amu, array of shape N)")
     tags: Optional[List[int]] = Field(None, description="Integer tags for atoms (array of shape N)")
     charges: Optional[List[float]] = Field(None, description="Initial atomic charges (array of shape N)")
@@ -22,6 +25,7 @@ class ASEDataModel(BaseModel):
 
     # Unit cell and periodicity
     cell: Optional[List[List[float]]] = Field(None, description="Unit cell vectors (Angstrom, array of shape 3 x 3)")
+    cell_lengths_and_angles: Optional[List[float]] = Field(None, description="Cell parameters: [a, b, c, alpha, beta, gamma] (Angstrom and degrees, array of shape 6)")
     pbc: Optional[List[bool]] = Field(None, description="Periodic boundary condition flags (array of shape 3)")
     celldisp: Optional[List[float]] = Field(None, description="Unit cell displacement vectors (Angstrom, array of shape 3)")
 
@@ -40,6 +44,8 @@ class ASEDataModel(BaseModel):
 
     # Derived properties
     center_of_mass: Optional[List[float]] = Field(None, description="Center of mass (Angstrom, array of shape 3)")
+    moments_of_inertia: Optional[List[float]] = Field(None, description="Principal moments of inertia (amu*Angstrom^2, array of shape 3)")
+    angular_momentum: Optional[List[float]] = Field(None, description="Total angular momentum (amu*Angstrom^2/fs, array of shape 3)")
     volume: Optional[float] = Field(None, description="Unit cell volume (Angstrom^3)")
     temperature: Optional[float] = Field(None, description="Kinetic temperature (Kelvin)")
     dipole_moment: Optional[List[float]] = Field(None, description="Electric dipole moment (eA, array of shape 3)")
@@ -280,25 +286,46 @@ def ase_to_model(ext_data: ase.io.Atoms, filepath: str | None = None) -> ASEData
         result['source_format'] = detected_format
         result['detected_software'] = detected_software
 
-    # Special handling for symbols (convert Symbols object to list)
-    if hasattr(ext_data, 'symbols'):
-        symbols_obj = ext_data.get_chemical_symbols()
-        result['symbols'] = symbols_obj if isinstance(symbols_obj, list) else list(symbols_obj)
+    # Basic property
+    result['natom'] = len(ext_data)
 
-    # Special handling for constraints (convert to dict representations)
+    # Define special handling for properties that need custom conversion
+    special_properties = {
+        'symbols': lambda: ext_data.get_chemical_symbols(),
+        'chemical_formula': lambda: ext_data.get_chemical_formula(),
+        'scaled_positions': lambda: ext_data.get_scaled_positions(),
+        'cell_lengths_and_angles': lambda: ext_data.get_cell_lengths_and_angles(),
+        'moments_of_inertia': lambda: ext_data.get_moments_of_inertia(),
+        'angular_momentum': lambda: ext_data.get_angular_momentum(),
+    }
+
+    # Process special properties with centralized handling
+    for field_name, getter in special_properties.items():
+        try:
+            value = getter()
+            if value is not None:
+                # Convert numpy arrays to lists
+                if hasattr(value, 'tolist'):
+                    result[field_name] = value.tolist()
+                else:
+                    result[field_name] = value if isinstance(value, list) else list(value) if hasattr(value, '__iter__') and not isinstance(value, str) else value
+        except:
+            pass
+
+    # Special handling for constraints (requires different processing)
     if hasattr(ext_data, 'constraints') and ext_data.constraints:
         result['constraints'] = []
         for constraint in ext_data.constraints:
-            # Convert constraint objects to dictionaries
             if hasattr(constraint, 'todict'):
                 result['constraints'].append(constraint.todict())
             else:
-                # Fallback: store string representation
                 result['constraints'].append({'type': type(constraint).__name__, 'repr': str(constraint)})
 
     # Iterate through all model fields
     for field_name in ASEDataModel.model_fields.keys():
-        if field_name in ['source_format', 'source_extension', 'detected_software', 'symbols', 'constraints']:
+        if field_name in ['source_format', 'source_extension', 'detected_software', 'natom', 'symbols',
+                          'chemical_formula', 'scaled_positions', 'cell_lengths_and_angles',
+                          'moments_of_inertia', 'angular_momentum', 'constraints']:
             continue  # Already handled above
 
         # Try to get the value using get_ method first (ASE convention)
