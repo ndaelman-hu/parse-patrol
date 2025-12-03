@@ -1,6 +1,10 @@
 import ase.io # pyright: ignore[reportMissingImports]
 from typing import Optional, Dict, List
-from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
+from pydantic import BaseModel, Field, conlist # pyright: ignore[reportMissingImports]
+
+# Type aliases for constrained arrays
+Vector3 = conlist(float, min_length=3, max_length=3)  # type: ignore
+Vector6 = conlist(float, min_length=6, max_length=6)  # type: ignore
 
 class ASEDataModel(BaseModel):
     """A container class for data loaded from (or to be written to) a file using ASE."""
@@ -11,44 +15,44 @@ class ASEDataModel(BaseModel):
     detected_software: Optional[str] = Field(None, description="Detected quantum chemistry software package")
 
     # Core structural properties
-    natom: Optional[int] = Field(None, description="Number of atoms (integer)")
-    positions: Optional[List[List[float]]] = Field(None, description="Cartesian coordinates of atoms (Angstrom, array of shape N x 3)")
-    scaled_positions: Optional[List[List[float]]] = Field(None, description="Fractional coordinates within unit cell (array of shape N x 3)")
-    numbers: Optional[List[int]] = Field(None, description="Atomic numbers (array of shape N)")
-    symbols: Optional[List[str]] = Field(None, description="Chemical element symbols (array of shape N)")
+    natom: Optional[int] = Field(None, description="Number of atoms")
+    positions: Optional[List[Vector3]] = Field(None, description="Cartesian coordinates of atoms (Angstrom)")
+    scaled_positions: Optional[List[Vector3]] = Field(None, description="Fractional coordinates within unit cell")
+    numbers: Optional[List[int]] = Field(None, description="Atomic numbers")
+    symbols: Optional[List[str]] = Field(None, description="Chemical element symbols")
     chemical_formula: Optional[str] = Field(None, description="Chemical formula string")
-    masses: Optional[List[float]] = Field(None, description="Atomic masses (amu, array of shape N)")
-    tags: Optional[List[int]] = Field(None, description="Integer tags for atoms (array of shape N)")
-    charges: Optional[List[float]] = Field(None, description="Initial atomic charges (array of shape N)")
-    momenta: Optional[List[List[float]]] = Field(None, description="Momentum vectors (array of shape N x 3)")
-    velocities: Optional[List[List[float]]] = Field(None, description="Velocity vectors (Angstrom/fs, array of shape N x 3)")
+    masses: Optional[List[float]] = Field(None, description="Atomic masses (amu)")
+    tags: Optional[List[int]] = Field(None, description="Integer tags for atoms")
+    charges: Optional[List[float]] = Field(None, description="Initial atomic charges")
+    momenta: Optional[List[Vector3]] = Field(None, description="Momentum vectors")
+    velocities: Optional[List[Vector3]] = Field(None, description="Velocity vectors (Angstrom/fs)")
 
     # Unit cell and periodicity
-    cell: Optional[List[List[float]]] = Field(None, description="Unit cell vectors (Angstrom, array of shape 3 x 3)")
-    cell_lengths_and_angles: Optional[List[float]] = Field(None, description="Cell parameters: [a, b, c, alpha, beta, gamma] (Angstrom and degrees, array of shape 6)")
-    pbc: Optional[List[bool]] = Field(None, description="Periodic boundary condition flags (array of shape 3)")
-    celldisp: Optional[List[float]] = Field(None, description="Unit cell displacement vectors (Angstrom, array of shape 3)")
+    cell: Optional[List[Vector3]] = Field(None, description="Unit cell vectors (Angstrom)")
+    cell_lengths_and_angles: Optional[Vector6] = Field(None, description="Cell parameters: [a, b, c, alpha, beta, gamma] (Angstrom and degrees)")
+    pbc: Optional[conlist(bool, min_length=3, max_length=3)] = Field(None, description="Periodic boundary condition flags")  # type: ignore
+    celldisp: Optional[Vector3] = Field(None, description="Unit cell displacement vectors (Angstrom)")
 
     # Computational properties (from calculator)
-    forces: Optional[List[List[float]]] = Field(None, description="Atomic forces (eV/Angstrom, array of shape N x 3)")
+    forces: Optional[List[Vector3]] = Field(None, description="Atomic forces (eV/Angstrom)")
     energy: Optional[float] = Field(None, description="Total potential energy (eV)")
-    potential_energies: Optional[List[float]] = Field(None, description="Per-atom potential energies (eV, array of shape N)")
+    potential_energies: Optional[List[float]] = Field(None, description="Per-atom potential energies (eV)")
     kinetic_energy: Optional[float] = Field(None, description="Kinetic energy of nuclei (eV)")
-    stress: Optional[List[float]] = Field(None, description="Stress tensor (eV/Angstrom^3, array of shape 6)")
-    stresses: Optional[List[List[float]]] = Field(None, description="Per-atom stress tensors (eV/Angstrom^3, array of shape N x 6)")
+    stress: Optional[Vector6] = Field(None, description="Stress tensor (eV/Angstrom^3)")
+    stresses: Optional[List[Vector6]] = Field(None, description="Per-atom stress tensors (eV/Angstrom^3)")
 
     # Magnetic properties
-    initial_magnetic_moments: Optional[List[float]] = Field(None, description="Initial magnetic moments (Bohr magneton, array of shape N)")
-    magnetic_moments: Optional[List[float]] = Field(None, description="Calculated magnetic moments (Bohr magneton, array of shape N)")
+    initial_magnetic_moments: Optional[List[float]] = Field(None, description="Initial magnetic moments (Bohr magneton)")
+    magnetic_moments: Optional[List[float]] = Field(None, description="Calculated magnetic moments (Bohr magneton)")
     magnetic_moment: Optional[float] = Field(None, description="Total magnetic moment (Bohr magneton)")
 
     # Derived properties
-    center_of_mass: Optional[List[float]] = Field(None, description="Center of mass (Angstrom, array of shape 3)")
-    moments_of_inertia: Optional[List[float]] = Field(None, description="Principal moments of inertia (amu*Angstrom^2, array of shape 3)")
-    angular_momentum: Optional[List[float]] = Field(None, description="Total angular momentum (amu*Angstrom^2/fs, array of shape 3)")
+    center_of_mass: Optional[Vector3] = Field(None, description="Center of mass (Angstrom)")
+    moments_of_inertia: Optional[Vector3] = Field(None, description="Principal moments of inertia (amu*Angstrom^2)")
+    angular_momentum: Optional[Vector3] = Field(None, description="Total angular momentum (amu*Angstrom^2/fs)")
     volume: Optional[float] = Field(None, description="Unit cell volume (Angstrom^3)")
     temperature: Optional[float] = Field(None, description="Kinetic temperature (Kelvin)")
-    dipole_moment: Optional[List[float]] = Field(None, description="Electric dipole moment (eA, array of shape 3)")
+    dipole_moment: Optional[Vector3] = Field(None, description="Electric dipole moment (eA)")
 
     # Additional attributes
     constraints: Optional[List[Dict]] = Field(None, description="Applied constraints as list of dictionaries")
