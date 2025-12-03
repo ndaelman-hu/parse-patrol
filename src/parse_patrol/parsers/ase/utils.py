@@ -3,33 +3,322 @@ from typing import Optional, Dict, List
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 class ASEDataModel(BaseModel):
-    """A container class for data loaded from (or to be written to) a file."""
-    
-    # Format and metadata information
-    # source_format: Optional[str] = Field(None, description="Detected file format/software (e.g., 'gaussian', 'vasp', 'orca')")
-    # source_extension: Optional[str] = Field(None, description="Original file extension or type (e.g., '.fchk', 'POSCAR', '.cube')")
-    # detected_software: Optional[str] = Field(None, description="Detected quantum chemistry software package")
+    """A container class for data loaded from (or to be written to) a file using ASE."""
 
-    symbols: Optional[List[float]] = Field(None, description="Example field representing data from ASEData")
+    # Format and metadata information
+    source_format: Optional[str] = Field(None, description="Detected file format/software (e.g., 'gaussian', 'vasp', 'orca', 'xyz')")
+    source_extension: Optional[str] = Field(None, description="Original file extension or type (e.g., '.fchk', 'POSCAR', '.cube', '.xyz')")
+    detected_software: Optional[str] = Field(None, description="Detected quantum chemistry software package")
+
+    # Core structural properties
+    positions: Optional[List[List[float]]] = Field(None, description="Cartesian coordinates of atoms (Angstrom, array of shape N x 3)")
+    numbers: Optional[List[int]] = Field(None, description="Atomic numbers (array of shape N)")
+    symbols: Optional[List[str]] = Field(None, description="Chemical element symbols (array of shape N)")
+    masses: Optional[List[float]] = Field(None, description="Atomic masses (amu, array of shape N)")
+    tags: Optional[List[int]] = Field(None, description="Integer tags for atoms (array of shape N)")
+    charges: Optional[List[float]] = Field(None, description="Initial atomic charges (array of shape N)")
+    momenta: Optional[List[List[float]]] = Field(None, description="Momentum vectors (array of shape N x 3)")
+    velocities: Optional[List[List[float]]] = Field(None, description="Velocity vectors (Angstrom/fs, array of shape N x 3)")
+
+    # Unit cell and periodicity
+    cell: Optional[List[List[float]]] = Field(None, description="Unit cell vectors (Angstrom, array of shape 3 x 3)")
+    pbc: Optional[List[bool]] = Field(None, description="Periodic boundary condition flags (array of shape 3)")
+    celldisp: Optional[List[float]] = Field(None, description="Unit cell displacement vectors (Angstrom, array of shape 3)")
+
+    # Computational properties (from calculator)
+    forces: Optional[List[List[float]]] = Field(None, description="Atomic forces (eV/Angstrom, array of shape N x 3)")
+    energy: Optional[float] = Field(None, description="Total potential energy (eV)")
+    potential_energies: Optional[List[float]] = Field(None, description="Per-atom potential energies (eV, array of shape N)")
+    kinetic_energy: Optional[float] = Field(None, description="Kinetic energy of nuclei (eV)")
+    stress: Optional[List[float]] = Field(None, description="Stress tensor (eV/Angstrom^3, array of shape 6)")
+    stresses: Optional[List[List[float]]] = Field(None, description="Per-atom stress tensors (eV/Angstrom^3, array of shape N x 6)")
+
+    # Magnetic properties
+    initial_magnetic_moments: Optional[List[float]] = Field(None, description="Initial magnetic moments (Bohr magneton, array of shape N)")
+    magnetic_moments: Optional[List[float]] = Field(None, description="Calculated magnetic moments (Bohr magneton, array of shape N)")
+    magnetic_moment: Optional[float] = Field(None, description="Total magnetic moment (Bohr magneton)")
+
+    # Derived properties
+    center_of_mass: Optional[List[float]] = Field(None, description="Center of mass (Angstrom, array of shape 3)")
+    volume: Optional[float] = Field(None, description="Unit cell volume (Angstrom^3)")
+    temperature: Optional[float] = Field(None, description="Kinetic temperature (Kelvin)")
+    dipole_moment: Optional[List[float]] = Field(None, description="Electric dipole moment (eA, array of shape 3)")
+
+    # Additional attributes
+    constraints: Optional[List[Dict]] = Field(None, description="Applied constraints as list of dictionaries")
+    info: Optional[Dict] = Field(None, description="Dictionary with additional metadata and information")
 
 def ase_to_model(ext_data: ase.io.Atoms, filepath: str | None = None) -> ASEDataModel:
     """Convert ASE Atoms object to ASEDataModel (Pydantic) format.
-    
+
     Args:
-        ext_data: Parsed iodata object from IOData
+        ext_data: Parsed Atoms object from ASE
         filepath: Original filepath for metadata extraction
-    
+
     Returns:
-        IODataModel with converted data types for JSON serialization
+        ASEDataModel with converted data types for JSON serialization
     """
     result = {}
+
+    # Add format metadata if available
+    if filepath:
+        import os
+        basename = os.path.basename(filepath)
+        ext = os.path.splitext(filepath)[1].lower() if '.' in basename else None
+        result['source_extension'] = ext or basename  # For files without extensions
+
+        # Initialize format variables
+        detected_format = None
+        detected_software = None
+
+        # === Filename Pattern Matching (highest priority) ===
+        basename_lower = basename.lower()
+
+        # VASP files
+        if any(x in basename for x in ['POSCAR', 'CONTCAR']):
+            detected_format, detected_software = 'vasp', 'VASP'
+        elif 'OUTCAR' in basename:
+            detected_format, detected_software = 'vasp-out', 'VASP'
+        elif 'XDATCAR' in basename:
+            detected_format, detected_software = 'vasp-xdatcar', 'VASP'
+        elif 'vasp' in basename_lower and '.xml' in basename_lower:
+            detected_format, detected_software = 'vasp-xml', 'VASP'
+        elif any(x in basename for x in ['CHGCAR', 'LOCPOT']):
+            detected_format, detected_software = 'cube', 'VASP'
+
+        # DL_POLY files
+        elif basename == 'HISTORY':
+            detected_format, detected_software = 'dlp-history', 'DL_POLY'
+
+        # Turbomole files
+        elif basename == 'coord':
+            detected_format, detected_software = 'turbomole', 'Turbomole'
+        elif basename == 'gradient':
+            detected_format, detected_software = 'turbomole-gradient', 'Turbomole'
+
+        # ELK files
+        elif basename == 'GEOMETRY.OUT':
+            detected_format, detected_software = 'elk', 'ELK'
+
+        # Exciting files
+        elif basename in ['input.xml', 'INFO.out']:
+            detected_format, detected_software = 'exciting', 'exciting'
+
+        # Octopus input
+        elif basename == 'inp':
+            detected_format, detected_software = 'octopus-in', 'Octopus'
+
+        # GPUMD input
+        elif basename == 'xyz.in':
+            detected_format, detected_software = 'gpumd', 'GPUMD'
+
+        # ABINIT GSR
+        elif 'o_GSR.nc' in basename:
+            detected_format, detected_software = 'abinit-gsr', 'ABINIT'
+
+        # CMDFT
+        elif 'I_info' in basename:
+            detected_format, detected_software = 'cmdft', 'CMDFT'
+
+        # === Extension-Based Detection ===
+        elif ext:
+            # Quantum Chemistry Software
+            if ext in ['.com', '.gjf']:
+                detected_format, detected_software = 'gaussian-in', 'Gaussian'
+            elif ext == '.log' and 'gaussian' in basename_lower:
+                detected_format, detected_software = 'gaussian-out', 'Gaussian'
+            elif ext == '.fchk':
+                detected_format, detected_software = 'gaussian-out', 'Gaussian'
+
+            # CASTEP formats
+            elif ext == '.castep':
+                detected_format, detected_software = 'castep-castep', 'CASTEP'
+            elif ext == '.cell':
+                detected_format, detected_software = 'castep-cell', 'CASTEP'
+            elif ext == '.geom':
+                detected_format, detected_software = 'castep-geom', 'CASTEP'
+            elif ext == '.md':
+                detected_format, detected_software = 'castep-md', 'CASTEP'
+            elif ext == '.phonon':
+                detected_format, detected_software = 'castep-phonon', 'CASTEP'
+
+            # FHI-aims
+            elif ext == '.in' and 'aims' in basename_lower:
+                detected_format, detected_software = 'aims', 'FHI-aims'
+
+            # Quantum Espresso
+            elif ext == '.pwi':
+                detected_format, detected_software = 'espresso-in', 'Quantum Espresso'
+            elif ext == '.pwo':
+                detected_format, detected_software = 'espresso-out', 'Quantum Espresso'
+            elif ext == '.out' and ('qe' in basename_lower or 'espresso' in basename_lower):
+                detected_format, detected_software = 'espresso-out', 'Quantum Espresso'
+
+            # NWChem
+            elif ext == '.nwi':
+                detected_format, detected_software = 'nwchem-in', 'NWChem'
+            elif ext == '.nwo':
+                detected_format, detected_software = 'nwchem-out', 'NWChem'
+            elif 'nwchem' in basename_lower:
+                detected_format, detected_software = 'nwchem-out', 'NWChem'
+
+            # ORCA
+            elif 'orca' in basename_lower:
+                detected_format, detected_software = 'orca-output', 'ORCA'
+
+            # CP2K
+            elif ext == '.dcd':
+                detected_format, detected_software = 'cp2k-dcd', 'CP2K'
+            elif ext == '.restart':
+                detected_format, detected_software = 'cp2k-restart', 'CP2K'
+
+            # Crystal
+            elif ext in ['.f34', '.34']:
+                detected_format, detected_software = 'crystal', 'Crystal'
+
+            # GAMESS-US
+            elif ext == '.dat' and 'gamess' in basename_lower:
+                detected_format, detected_software = 'gamess-us-punch', 'GAMESS-US'
+
+            # DMol3
+            elif ext == '.arc':
+                detected_format, detected_software = 'dmol-arc', 'DMol3'
+            elif ext == '.car':
+                detected_format, detected_software = 'dmol-car', 'DMol3'
+
+            # Molecular Dynamics
+            elif ext == '.gro':
+                detected_format, detected_software = 'gromacs', 'Gromacs'
+            elif ext == '.g96':
+                detected_format, detected_software = 'gromos', 'Gromos'
+            elif ext == '.config':
+                detected_format, detected_software = 'dlp4', 'DL_POLY_4'
+
+            # Structure Formats
+            elif ext == '.xyz':
+                detected_format = 'xyz'
+            elif ext == '.cif':
+                detected_format = 'cif'
+            elif ext == '.pdb':
+                detected_format = 'proteindatabank'
+            elif ext == '.cube':
+                detected_format = 'cube'
+            elif ext == '.xsf':
+                detected_format = 'xsf'
+            elif ext == '.gen':
+                detected_format, detected_software = 'gen', 'DFTB+'
+            elif ext == '.con':
+                detected_format, detected_software = 'eon', 'EON'
+            elif ext == '.mol':
+                detected_format = 'mol'
+            elif ext == '.sdf':
+                detected_format = 'sdf'
+            elif ext == '.cjson':
+                detected_format = 'cjson'
+            elif ext == '.xtl':
+                detected_format = 'mustem'
+            elif ext == '.rmc6f':
+                detected_format, detected_software = 'rmc6f', 'RMCProfile'
+            elif ext in ['.shelx', '.res']:
+                detected_format = 'res'
+            elif ext == '.ascii':
+                detected_format, detected_software = 'v-sim', 'V_Sim'
+
+            # SIESTA
+            elif ext == '.XV' or basename.endswith('.XV'):
+                detected_format, detected_software = 'siesta-xv', 'SIESTA'
+
+            # Materials Studio
+            elif ext == '.xsd':
+                detected_format = 'xsd'
+            elif ext == '.xtd':
+                detected_format = 'xtd'
+
+            # ASE Native Formats
+            elif ext == '.traj':
+                detected_format = 'traj'
+            elif ext == '.json':
+                detected_format = 'json'
+            elif ext == '.db':
+                detected_format = 'db'
+
+            # Special formats
+            elif ext == '.poscar':
+                detected_format, detected_software = 'vasp', 'VASP'
+            elif ext == '.vtu':
+                detected_format = 'vtu'
+            elif ext == '.nomad-json':
+                detected_format = 'nomad-json'
+
+            # Generic .out or .log files - try to detect software from filename
+            elif ext in ['.out', '.log']:
+                if 'gaussian' in basename_lower:
+                    detected_format, detected_software = 'gaussian-out', 'Gaussian'
+                elif 'orca' in basename_lower:
+                    detected_format, detected_software = 'orca-output', 'ORCA'
+                elif 'nwchem' in basename_lower:
+                    detected_format, detected_software = 'nwchem-out', 'NWChem'
+                elif 'aims' in basename_lower:
+                    detected_format, detected_software = 'aims-output', 'FHI-aims'
+                elif 'castep' in basename_lower:
+                    detected_format, detected_software = 'castep-castep', 'CASTEP'
+                elif 'espresso' in basename_lower or 'qe' in basename_lower:
+                    detected_format, detected_software = 'espresso-out', 'Quantum Espresso'
+                elif 'gpaw' in basename_lower:
+                    detected_format, detected_software = 'gpaw-out', 'GPAW'
+                elif 'onetep' in basename_lower:
+                    detected_format, detected_software = 'onetep-out', 'ONETEP'
+                elif 'qbox' in basename_lower:
+                    detected_format, detected_software = 'qbox', 'QBOX'
+                elif 'gamess' in basename_lower:
+                    detected_format, detected_software = 'gamess-us-out', 'GAMESS-US'
+                elif 'abinit' in basename_lower:
+                    detected_format, detected_software = 'abinit-out', 'ABINIT'
+                elif 'dacapo' in basename_lower:
+                    detected_format, detected_software = 'dacapo-text', 'Dacapo'
+
+        result['source_format'] = detected_format
+        result['detected_software'] = detected_software
+
+    # Special handling for symbols (convert Symbols object to list)
+    if hasattr(ext_data, 'symbols'):
+        symbols_obj = ext_data.get_chemical_symbols()
+        result['symbols'] = symbols_obj if isinstance(symbols_obj, list) else list(symbols_obj)
+
+    # Special handling for constraints (convert to dict representations)
+    if hasattr(ext_data, 'constraints') and ext_data.constraints:
+        result['constraints'] = []
+        for constraint in ext_data.constraints:
+            # Convert constraint objects to dictionaries
+            if hasattr(constraint, 'todict'):
+                result['constraints'].append(constraint.todict())
+            else:
+                # Fallback: store string representation
+                result['constraints'].append({'type': type(constraint).__name__, 'repr': str(constraint)})
+
+    # Iterate through all model fields
     for field_name in ASEDataModel.model_fields.keys():
-        # if field_name in ['source_format', 'source_extension', 'detected_software']:
-        #     continue  # Already handled above
-            
-        value = getattr(ext_data, field_name, None)
+        if field_name in ['source_format', 'source_extension', 'detected_software', 'symbols', 'constraints']:
+            continue  # Already handled above
+
+        # Try to get the value using get_ method first (ASE convention)
+        value = None
+        get_method_name = f'get_{field_name}'
+        if hasattr(ext_data, get_method_name):
+            try:
+                value = getattr(ext_data, get_method_name)()
+            except:
+                # Some get methods might fail if calculator is not attached
+                pass
+
+        # Fallback to direct attribute access
+        if value is None:
+            value = getattr(ext_data, field_name, None)
+
         if value is None:
             continue
+
+        # Convert numpy arrays and special types to JSON-serializable formats
         if hasattr(value, 'tolist'):
             result[field_name] = value.tolist()
         elif isinstance(value, dict):
@@ -38,6 +327,7 @@ def ase_to_model(ext_data: ase.io.Atoms, filepath: str | None = None) -> ASEData
             result[field_name] = [item.tolist() for item in value]
         else:
             result[field_name] = value
+
     return ASEDataModel(**result)
 
 
