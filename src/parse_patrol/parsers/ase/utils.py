@@ -1,10 +1,11 @@
 import ase.io # pyright: ignore[reportMissingImports]
-from typing import Optional, Dict, List
-from pydantic import BaseModel, Field, conlist # pyright: ignore[reportMissingImports]
+from typing import Optional, Dict, List, Annotated
+from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 # Type aliases for constrained arrays
-Vector3 = conlist(float, min_length=3, max_length=3)  # type: ignore
-Vector6 = conlist(float, min_length=6, max_length=6)  # type: ignore
+Vector3 = Annotated[List[float], Field(min_length=3, max_length=3)]
+Vector6 = Annotated[List[float], Field(min_length=6, max_length=6)]
+PBCFlags = Annotated[List[bool], Field(min_length=3, max_length=3)]
 
 class ASEDataModel(BaseModel):
     """A container class for data loaded from (or to be written to) a file using ASE."""
@@ -30,7 +31,7 @@ class ASEDataModel(BaseModel):
     # Unit cell and periodicity
     cell: Optional[List[Vector3]] = Field(None, description="Unit cell vectors (Angstrom)")
     cell_lengths_and_angles: Optional[Vector6] = Field(None, description="Cell parameters: [a, b, c, alpha, beta, gamma] (Angstrom and degrees)")
-    pbc: Optional[conlist(bool, min_length=3, max_length=3)] = Field(None, description="Periodic boundary condition flags")  # type: ignore
+    pbc: Optional[PBCFlags] = Field(None, description="Periodic boundary condition flags")
     celldisp: Optional[Vector3] = Field(None, description="Unit cell displacement vectors (Angstrom)")
 
     # Computational properties (from calculator)
