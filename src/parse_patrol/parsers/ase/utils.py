@@ -1,4 +1,5 @@
-import ase.io # pyright: ignore[reportMissingImports]
+import ase  # pyright: ignore[reportMissingImports]
+import ase.io  # pyright: ignore[reportMissingImports]
 from typing import Optional, Dict, List, Annotated
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
@@ -59,7 +60,7 @@ class ASEDataModel(BaseModel):
     constraints: Optional[List[Dict]] = Field(None, description="Applied constraints as list of dictionaries")
     info: Optional[Dict] = Field(None, description="Dictionary with additional metadata and information")
 
-def ase_to_model(ext_data: ase.io.Atoms, filepath: str | None = None) -> ASEDataModel:
+def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataModel:
     """Convert ASE Atoms object to ASEDataModel (Pydantic) format.
 
     Args:
