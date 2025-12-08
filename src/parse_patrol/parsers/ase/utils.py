@@ -303,6 +303,7 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
         'cell_lengths_and_angles': lambda: ext_data.get_cell_lengths_and_angles(),
         'moments_of_inertia': lambda: ext_data.get_moments_of_inertia(),
         'angular_momentum': lambda: ext_data.get_angular_momentum(),
+        'celldisp': lambda: ext_data.get_celldisp().ravel(),  # Ravel to ensure 1D array conversion
     }
 
     # Process special properties with centralized handling
@@ -331,7 +332,7 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
     for field_name in ASEDataModel.model_fields.keys():
         if field_name in ['source_format', 'source_extension', 'detected_software', 'natom', 'symbols',
                           'chemical_formula', 'scaled_positions', 'cell_lengths_and_angles',
-                          'moments_of_inertia', 'angular_momentum', 'constraints']:
+                          'moments_of_inertia', 'angular_momentum', 'celldisp', 'constraints']:
             continue  # Already handled above
 
         # Try to get the value using get_ method first (ASE convention)
