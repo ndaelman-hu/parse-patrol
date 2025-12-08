@@ -316,7 +316,7 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
                     result[field_name] = value.tolist()
                 else:
                     result[field_name] = value if isinstance(value, list) else list(value) if hasattr(value, '__iter__') and not isinstance(value, str) else value
-        except:
+        except (AttributeError, RuntimeError, TypeError, ValueError):
             pass
 
     # Special handling for constraints (requires different processing)
@@ -341,7 +341,7 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
         if hasattr(ext_data, get_method_name):
             try:
                 value = getattr(ext_data, get_method_name)()
-            except:
+            except (AttributeError, RuntimeError):
                 # Some get methods might fail if calculator is not attached
                 pass
 

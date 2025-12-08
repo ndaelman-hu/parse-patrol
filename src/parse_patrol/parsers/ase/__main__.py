@@ -182,7 +182,7 @@ async def ase_parse_file_to_model(filepath: str, format: str | None = None) -> A
     logger.info("Parsing file: %s%s", filepath, f" (format: {format})" if format else "")
     try:
         return ase_parse(filepath, format=format)
-    except (FileNotFoundError, ValueError, Exception) as e:
+    except (FileNotFoundError, ValueError) as e:
         logger.error("Failed to parse file: %s", e)
         raise
 
