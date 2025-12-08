@@ -315,7 +315,12 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
                 if hasattr(value, 'tolist'):
                     result[field_name] = value.tolist()
                 else:
-                    result[field_name] = value if isinstance(value, list) else list(value) if hasattr(value, '__iter__') and not isinstance(value, str) else value
+                    if isinstance(value, list):
+                        result[field_name] = value
+                    elif hasattr(value, '__iter__') and not isinstance(value, str):
+                        result[field_name] = list(value)
+                    else:
+                        result[field_name] = value
         except:
             pass
 
