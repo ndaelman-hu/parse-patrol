@@ -113,7 +113,7 @@ def nomad_search_entries(
     entry_range = EntryRange(start=start, end=end)
 
     # Build query parameters
-    query_body = {
+    query_body: Dict[str, Any] = {
         "owner": "visible",
         "query": {},
         "aggregations": {},

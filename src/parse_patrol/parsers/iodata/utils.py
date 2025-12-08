@@ -1,5 +1,5 @@
 import iodata as iodata_package
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Any
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 
@@ -64,8 +64,8 @@ def iodata_to_model(ext_data: iodata_package.IOData, filepath: Optional[str] = N
     Returns:
         IODataModel with converted data types for JSON serialization
     """
-    result = {}
-    
+    result: Dict[str, Any] = {}
+
     # Add format metadata if available
     if filepath:
         import os

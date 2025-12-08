@@ -103,8 +103,8 @@ def ccdata_to_model(ccdata: cclib.parser.data.ccData, filepath: str = None) -> C
     Returns:
         CCDataModel with converted data types for JSON serialization
     """
-    result = {}
-    
+    result: Dict[str, Any] = {}
+
     # Add format metadata if available
     if filepath:
         import os
