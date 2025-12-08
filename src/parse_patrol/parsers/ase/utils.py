@@ -367,12 +367,14 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
 
 def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
     """Parse chemistry file and return as ASEDataModel for JSON serialization.
-    
+
     Args:
-        filepath: Path to chemistry output file
-    
+        filepath: Path to chemistry output file.
+        format: Optional; string specifying the file format to use for parsing. If not provided,
+            ASE will attempt to automatically detect the format based on the file extension.
+
     Returns:
-        ASEDataModel with parsed data converted for JSON serialization
+        ASEDataModel with parsed data converted for JSON serialization.
     """
     data = ase.io.read(filepath, format=format)
     return ase_to_model(data, filepath)
