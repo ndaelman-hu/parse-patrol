@@ -43,8 +43,8 @@ class EntryRange(BaseModel):
 
 class NOMADEntry(BaseModel):
     entry_id: str = Field(..., description="NOMAD entry ID")
-    upload_id: Optional[str] = Field(None, description="NOMAD upload ID")
-    formula: Optional[str] = Field(None, description="Chemical formula")
+    upload_id: Optional[str] = Field(default=None, description="NOMAD upload ID")
+    formula: Optional[str] = Field(default=None, description="Chemical formula")
     formula_type: FormulaType = Field(..., description="Type of chemical formula representation")
     program_name: Optional[str] = Field(
         None, description="Computational program used (VASP, Gaussian, etc.)"
@@ -113,7 +113,7 @@ def nomad_search_entries(
     entry_range = EntryRange(start=start, end=end)
 
     # Build query parameters
-    query_body = {
+    query_body: Dict[str, Any] = {
         "owner": "visible",
         "query": {},
         "aggregations": {},

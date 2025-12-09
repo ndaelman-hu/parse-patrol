@@ -15,33 +15,33 @@ import periodictable
 
 class CustomGaussianDataModel(BaseModel):
     # Common job info
-    route: Optional[str] = Field(None, description="Gaussian route section (from .gjf or inferred)")
-    title: Optional[str] = Field(None, description="Title section (from .gjf if present)")
-    charge: Optional[int] = Field(None, description="Net charge")
-    mult: Optional[int] = Field(None, description="Multiplicity")
-    natom: Optional[int] = Field(None, description="Number of atoms")
+    route: Optional[str] = Field(default=None, description="Gaussian route section (from .gjf or inferred)")
+    title: Optional[str] = Field(default=None, description="Title section (from .gjf if present)")
+    charge: Optional[int] = Field(default=None, description="Net charge")
+    mult: Optional[int] = Field(default=None, description="Multiplicity")
+    natom: Optional[int] = Field(default=None, description="Number of atoms")
 
     # Geometry
-    atomnos: Optional[List[int]] = Field(None, description="Atomic numbers")
-    atomcoords: Optional[List[List[float]]] = Field(None, description="Final geometry (angstroms)")
+    atomnos: Optional[List[int]] = Field(default=None, description="Atomic numbers")
+    atomcoords: Optional[List[List[float]]] = Field(default=None, description="Final geometry (angstroms)")
 
     # Energies & thermochemistry (Hartree unless noted)
-    scfenergies: Optional[List[float]] = Field(None, description="SCF energies encountered (Hartree)")
-    final_energy: Optional[float] = Field(None, description="Final SCF energy (Hartree)")
-    zpve: Optional[float] = Field(None, description="Zero-point vibrational energy (Hartree/particle)")
-    sum_electronic_and_zero_point: Optional[float] = Field(None, description="Sum of electronic and zero-point energies (Hartree)")
-    sum_electronic_and_thermal_energies: Optional[float] = Field(None, description="Sum of electronic and thermal energies (Hartree)")
-    sum_electronic_and_thermal_enthalpies: Optional[float] = Field(None, description="Sum of electronic and thermal enthalpies (Hartree)")
-    sum_electronic_and_thermal_free_energies: Optional[float] = Field(None, description="Sum of electronic and thermal free energies (Hartree)")
-    temperature: Optional[float] = Field(None, description="Thermochemistry temperature (K)")
+    scfenergies: Optional[List[float]] = Field(default=None, description="SCF energies encountered (Hartree)")
+    final_energy: Optional[float] = Field(default=None, description="Final SCF energy (Hartree)")
+    zpve: Optional[float] = Field(default=None, description="Zero-point vibrational energy (Hartree/particle)")
+    sum_electronic_and_zero_point: Optional[float] = Field(default=None, description="Sum of electronic and zero-point energies (Hartree)")
+    sum_electronic_and_thermal_energies: Optional[float] = Field(default=None, description="Sum of electronic and thermal energies (Hartree)")
+    sum_electronic_and_thermal_enthalpies: Optional[float] = Field(default=None, description="Sum of electronic and thermal enthalpies (Hartree)")
+    sum_electronic_and_thermal_free_energies: Optional[float] = Field(default=None, description="Sum of electronic and thermal free energies (Hartree)")
+    temperature: Optional[float] = Field(default=None, description="Thermochemistry temperature (K)")
 
     # Vibrations
-    vibfreqs: Optional[List[float]] = Field(None, description="Vibrational frequencies (cm^-1)")
-    vibirs: Optional[List[float]] = Field(None, description="IR intensities (km/mol)")
-    vibrmasses: Optional[List[float]] = Field(None, description="Reduced masses (amu)")
+    vibfreqs: Optional[List[float]] = Field(default=None, description="Vibrational frequencies (cm^-1)")
+    vibirs: Optional[List[float]] = Field(default=None, description="IR intensities (km/mol)")
+    vibrmasses: Optional[List[float]] = Field(default=None, description="Reduced masses (amu)")
     # vibdisps omitted for now due to complexity; can be added later
 
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: Optional[Dict[str, Any]] = Field(default=None, description="Additional metadata")
 
 
 # Regular expression patterns for parsing Gaussian output
@@ -305,11 +305,12 @@ def _parse_gjf(path: Path) -> CustomGaussianDataModel:
     lattice_vector_prefixes = ("Tv", "Tv1", "Tv2", "Tv3", "Tv4", "Tv5", "Tv6")
     periodic = set(lattice_vector_prefixes)
     # Use periodictable for comprehensive element mapping
+    element_to_Z: Dict[str, int]
     try:
         element_to_Z = {el.symbol: el.number for el in periodictable.elements if el.number}
     except Exception:
         # Fallback minimal mapping if periodictable is not installed
-        element_to_Z: Dict[str, int] = {
+        element_to_Z = {
             "H": 1, "He": 2,
             "Li": 3, "Be": 4, "B": 5, "C": 6, "N": 7, "O": 8, "F": 9, "Ne": 10,
             "Na": 11, "Mg": 12, "Al": 13, "Si": 14, "P": 15, "S": 16, "Cl": 17, "Ar": 18,
