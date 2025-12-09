@@ -1,6 +1,6 @@
 import ase  # pyright: ignore[reportMissingImports]
 import ase.io  # pyright: ignore[reportMissingImports]
-from typing import Optional, Dict, List, Annotated
+from typing import Optional, Dict, List, Annotated, Any
 from pydantic import BaseModel, Field # pyright: ignore[reportMissingImports]
 
 # Type aliases for constrained arrays
@@ -70,7 +70,7 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
     Returns:
         ASEDataModel with converted data types for JSON serialization
     """
-    result = {}
+    result: Dict[str, Any] = {}
 
     # Add format metadata if available
     if filepath:
@@ -381,5 +381,8 @@ def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
     Returns:
         ASEDataModel with parsed data converted for JSON serialization.
     """
-    data = ase.io.read(filepath, format=format)
+    data: ase.Atoms | list[ase.Atoms] = ase.io.read(filepath, format=format)
+    # ase.io.read can return Atoms or list[Atoms] for trajectories - take first structure
+    if isinstance(data, list):
+        data = data[0]
     return ase_to_model(data, filepath)
