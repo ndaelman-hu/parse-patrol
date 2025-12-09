@@ -21,26 +21,20 @@ jobs:
     - name: Set up Python
       run: uv python install 3.12
 
-    - name: Install dependencies with dev extras
-      run: uv sync --extra dev
+    - name: Install all dependencies (needed for type checking imports)
+      run: uv sync --extra all
+
+    - name: Type checking with mypy
+      run: uv run mypy src/parse_patrol --ignore-missing-imports --pretty
+
+    - name: Type checking with Pyright
+      run: npx -y pyright src/parse_patrol
 
     # Linting is available but not enforced yet
     # Uncomment these steps when ready to enforce code quality
-    
+
     # - name: Run ruff linting
     #   run: uv run ruff check .
 
     # - name: Run ruff formatting check
     #   run: uv run ruff format --check .
-
-    # - name: Type checking with mypy (if available)
-    #   run: |
-    #     if uv run python -c "import mypy" 2>/dev/null; then
-    #       uv run mypy src/parse_patrol --ignore-missing-imports
-    #     else
-    #       echo "mypy not available, skipping type checking"
-    #     fi
-    #   continue-on-error: true
-
-    - name: Placeholder for future linting
-      run: echo "Linting workflow ready - uncomment steps above when ready to enforce"
