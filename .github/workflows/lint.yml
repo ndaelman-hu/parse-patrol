@@ -21,8 +21,8 @@ jobs:
     - name: Set up Python
       run: uv python install 3.12
 
-    - name: Install dependencies with dev extras
-      run: uv sync --extra dev
+    - name: Install all dependencies (needed for type checking imports)
+      run: uv sync --extra all
 
     - name: Type checking with mypy
       run: uv run mypy src/parse_patrol --ignore-missing-imports --pretty
