@@ -3,7 +3,7 @@ name = "parse-patrol"
 version = "0.1.0"
 description = "Dual-mode chemistry parsing package: MCP discovery + direct Python imports for computational chemistry analysis"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "pydantic", 
     "requests",
