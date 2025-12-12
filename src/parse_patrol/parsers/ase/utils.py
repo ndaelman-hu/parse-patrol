@@ -346,8 +346,9 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
         if hasattr(ext_data, get_method_name):
             try:
                 value = getattr(ext_data, get_method_name)()
-            except (AttributeError, RuntimeError):
+            except (AttributeError, RuntimeError, ValueError):
                 # Some get methods might fail if calculator is not attached
+                # ValueError can occur for volume on non-periodic systems
                 pass
 
         # Fallback to direct attribute access
