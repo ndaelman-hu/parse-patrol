@@ -84,7 +84,7 @@ This means the same codebase works across different deployment scenarios - from 
 Potential development routes -aside from extending tooling- include:
 
 - adding documentation on the parsers and quantum chemistry software via RAG/MCP.
-- proving the modularity of LLM: integrating with another agent, e.g. Claude.
+- proving the modularity of LLM: integrating with other AI agents via MCP protocol.
 - coding our own, smaller and more modular parsing functions.
 - using multiple agents for orchestrating complex tasks.
 

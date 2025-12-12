@@ -5,7 +5,7 @@
 Ready-to-use configuration templates are available in the `templates/` folder:
 
 - **VS Code**: Copy `templates/vscode-mcp.json` to `.vscode/mcp.json`
-- **Claude Desktop**: Copy content from `templates/claude-desktop-mcp.json` to your Claude config
+- **Claude Code**: defer to `claude mcp` in the terminal (see Claude Code section below)
 - **Neovim**: Use `templates/neovim-mcp.json` as a starting point
 
 ### Individual Servers (Testing)
@@ -71,7 +71,46 @@ Reviewing or editing is still possible at this step.
 PITFALL: do not use the file explorer for adding fields, but the resource dialog.
 Else you copy-paste the file contents, NOT the file path.
 
-### Claude Desktop (experimental)
+## Claude Code (verified)
+
+Claude Code supports MCP servers through three installation scopes: local (project-specific), project (team-shared), and user (cross-project). For parse-patrol, we recommend user scope for easy access across all your chemistry projects.
+
+### Quick Setup (User Scope - Recommended)
+
+From your parse-patrol directory, run:
+
+```bash
+claude mcp add --scope user --transport stdio parse-patrol -- uv run python -m parse_patrol
+```
+
+This installs parse-patrol system-wide in *your user configuration* (`~/.claude.json`), making it available in all Claude Code sessions on your machine.
+
+**Managing MCP Servers:**
+- Use `/mcp` command in Claude Code to view and manage installed servers
+- Disable/enable servers as needed through the `/mcp` interface
+- List all servers with `claude mcp list`
+
+### Alternative Installation Scopes
+
+**Local Scope (Project-specific):**
+```bash
+# From parse-patrol directory
+# Only available when working in this specific directory
+claude mcp add --transport stdio parse-patrol -- uv run python -m parse_patrol
+```
+
+**Project Scope (Team-shared):**
+```bash
+# Creates .mcp.json in project root
+# Can be checked into version control for team sharing
+claude mcp add --scope project --transport stdio parse-patrol -- uv run python -m parse_patrol
+```
+
+**Scope Priority:** When multiple scopes define the same server, Claude Code uses: local > project > user.
+
+For more details on installation scopes, see [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp#mcp-installation-scopes).
+
+## Alternative Claude Code Setup Methods (experimental)
 
 **Option 1: Project-scoped (Recommended):**
 
@@ -90,16 +129,7 @@ claude mcp add parse-patrol --scope project -- sh -c "cd $(pwd) && PYTHONPATH=sr
 - Using `--project $(pwd)` ensures `uv` uses the correct project environment
 - Alternatively, use the venv Python directly: `.venv/bin/python`
 
-**Option 2: Manual configuration:**
-
-1. Copy `claude-desktop-mcp.json` content to your Claude Desktop configuration file:
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-   - **Linux/Ubuntu**: `~/.config/Claude/claude_desktop_config.json`
-2. **Important**: Update `/path/to/parse-patrol` with your actual project path
-3. Restart Claude Desktop
-
-**Troubleshooting Claude MCP:**
+**Troubleshooting:**
 
 - **Environment mismatch**: If "No module named 'mcp'" error, the `uv` environment differs from your project
   - Use `uv --project $(pwd) run` or direct venv path: `.venv/bin/python`
@@ -107,7 +137,7 @@ claude mcp add parse-patrol --scope project -- sh -c "cd $(pwd) && PYTHONPATH=sr
 - **Connection closed**: Server starts but immediately closes
   - Check dependencies: `uv sync --extra mcp`
   - Verify imports work: `PYTHONPATH=src uv run python -c "import parse_patrol.__main__"`
-- **Server doesn't sync**: Try restarting Claude Desktop after adding the server
+- **Server doesn't sync**: Try restarting your Claude Code session, use the `/mcp` command to inspect the servers. This will inform you whether the server is registered, or experiencing errors starting up.
 
 ### Neovim (experimental)
 
