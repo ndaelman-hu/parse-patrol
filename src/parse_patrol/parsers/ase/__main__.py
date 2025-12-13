@@ -156,6 +156,48 @@ All vector and tensor fields are validated using Pydantic constraints:
 - Format detection may require file content inspection
 - Very specialized formats may need explicit format specification
 
+## Known Issues & Surprises (from stress testing 889 files)
+
+### Volume Field for Molecular Systems
+**Behavior**: Non-periodic molecular systems (PBC=[False,False,False]) will have `volume: None`
+**Reason**: ASE's `get_volume()` raises ValueError for systems without unit cells
+**Impact**: This is correct - molecules don't have unit cell volume
+**Solution**: Volume field is Optional, None is expected for molecular systems
+
+### Unexpected Format Support
+
+**ORCA Files (24.6% success)**:
+- ASE has NO registered 'orca' format, yet many ORCA files parse successfully
+- Files likely parse as XYZ or other generic formats
+- Check `source_format` field to see what format was detected
+
+**GAMESS Files (48.8% success)**:
+- ASE has NO documented 'gamess' format, yet files parse
+- GAMESS may output in XYZ or Gaussian-compatible formats
+- Files may auto-detect as 'gaussian-out' or similar
+
+### Format Name Inconsistencies
+
+**Correct ASE format names** (case-sensitive):
+- Gaussian: `gaussian` (input), `gaussian-out` (output) ✓
+- NWChem: `nwchem-in`, `nwchem-out` ✓
+- CASTEP: `castep-castep`, `castep-cell`, `castep-geom` ✓
+- NOT: 'gaussian-log', 'g09', 'g16', 'orca' ✗
+
+### Formats With Zero Support
+
+**CP2K**: Only `cp2k-dcd` format exists - no output file parser
+**Crystal**: Only `.f34`/`.34` files - not standard output files
+**LAMMPS**: Has formats but may not match your file type
+
+### Stress Test Results
+- **Total files tested**: 889 from NOMAD database
+- **Overall success rate**: 20.1% (after ValueError fix)
+- **Best performers**: VASP (44.4%), Gaussian (83.3%), GAMESS (48.8%)
+- **Complete failures**: CP2K, CASTEP, ABINIT, Crystal, exciting (0%)
+
+See `stress_test_report.md` for full analysis.
+
 ## Extensibility
 
 ASE is modular - users can add custom calculators and I/O formats through plugins, potentially supporting more formats than listed here.
