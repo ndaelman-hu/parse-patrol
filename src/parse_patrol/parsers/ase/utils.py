@@ -371,6 +371,68 @@ def ase_to_model(ext_data: ase.Atoms, filepath: str | None = None) -> ASEDataMod
     return ASEDataModel(**result)
 
 
+def is_binary_file(filepath: str, sample_size: int = 8192) -> bool:
+    """Check if a file appears to be binary by analyzing its content.
+
+    Args:
+        filepath: Path to the file to check.
+        sample_size: Number of bytes to read for analysis (default 8192).
+
+    Returns:
+        True if file appears to be binary, False if it appears to be text.
+
+    Algorithm:
+        - Reads first sample_size bytes
+        - Counts null bytes (0x00) and non-printable characters
+        - If >30% of bytes are binary indicators, classify as binary
+        - Common binary indicators: null bytes, high ratio of non-ASCII bytes
+    """
+    try:
+        with open(filepath, 'rb') as f:
+            chunk = f.read(sample_size)
+
+        if not chunk:
+            return False  # Empty file, treat as text
+
+        # Count indicators of binary data
+        null_bytes = chunk.count(0)
+
+        # Count non-printable bytes (excluding common whitespace: \t=9, \n=10, \r=13)
+        non_printable = sum(1 for b in chunk if b < 32 and b not in (9, 10, 13))
+
+        # Calculate ratios
+        total_bytes = len(chunk)
+        null_ratio = null_bytes / total_bytes
+        non_printable_ratio = non_printable / total_bytes
+
+        # Count high-byte values (>127) which are uncommon in text but common in binary
+        high_bytes = sum(1 for b in chunk if b > 127)
+        high_byte_ratio = high_bytes / total_bytes
+
+        # Binary file heuristics:
+        # - ANY null bytes in first 100 bytes strongly suggests binary (text files rarely have nulls)
+        # - >1% null bytes overall indicates binary
+        # - >20% non-printable bytes indicates binary
+        # - >15% high bytes (>127) indicates binary (common in binary data)
+        # - Combined indicators >25% suggests binary
+        if total_bytes >= 100 and chunk[:100].count(0) > 0:
+            return True
+        if null_ratio > 0.01:
+            return True
+        if non_printable_ratio > 0.20:
+            return True
+        if high_byte_ratio > 0.15:
+            return True
+        if (null_ratio + non_printable_ratio + high_byte_ratio) > 0.25:
+            return True
+
+        return False
+
+    except Exception:
+        # If we can't read the file, let ASE try and report the actual error
+        return False
+
+
 def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
     """Parse chemistry file and return as ASEDataModel for JSON serialization.
 
@@ -382,6 +444,17 @@ def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
     Returns:
         ASEDataModel with parsed data converted for JSON serialization.
     """
+    # Pre-parsing check: detect binary files before ASE tries to parse them
+    if is_binary_file(filepath):
+        raise ValueError(
+            f"File appears to be binary data, not a text file. "
+            f"ASE only supports text-based chemistry output files. "
+            f"Common binary files include: FORTRAN unformatted outputs (*.OUT from exciting), "
+            f"Gaussian checkpoint files (.chk), ORCA binary files (.gbw, .scfp), "
+            f"and other proprietary binary formats. "
+            f"Please use text-based output files instead (e.g., .log, .out, INFO.OUT)."
+        )
+
     try:
         data: ase.Atoms | list[ase.Atoms] = ase.io.read(filepath, format=format)
     except StopIteration:
