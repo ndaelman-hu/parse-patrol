@@ -26,26 +26,29 @@ This parser leverages ASE's extensive I/O capabilities to read 80+ file formats.
 ## Supported File Formats (80+)
 
 ### Quantum Chemistry Software:
-- **VASP** - POSCAR, CONTCAR, OUTCAR, XDATCAR, vasprun.xml
-- **Gaussian** - .com, .gjf (input), .log, .fchk (output)
-- **ORCA** - output files
-- **NWChem** - .nwi (input), .nwo (output)
-- **Quantum Espresso** - .pwi (input), .pwo, .out (output)
-- **CASTEP** - .castep, .cell, .geom, .md, .phonon
-- **FHI-aims** - .in (input), output files
-- **CP2K** - .dcd, .restart
-- **ABINIT** - GSR files, input/output
-- **Crystal** - .f34, .34
-- **GAMESS-US** - .dat (punch files)
-- **GPAW** - output files, .gpw
-- **ONETEP** - input/output
-- **Octopus** - inp (input)
-- **SIESTA** - .XV files, STRUCT
-- **Turbomole** - coord, gradient
-- **ELK** - GEOMETRY.OUT
-- **Exciting** - input.xml, INFO.out
-- **QBOX** - output files
-- **Dacapo** - text output
+- **VASP** ✓✓✓ - POSCAR, CONTCAR, OUTCAR, XDATCAR, vasprun.xml (44% success in testing)
+- **Gaussian** ✓✓✓ - .com, .gjf (input), .log, .fchk (output) (83% success - use formats: `gaussian`, `gaussian-out`)
+- **GAMESS-US** ✓✓ - .dat (punch files) (49% success - no explicit format, parses as other formats)
+- **FHI-aims** ✓ - .in (input), output files (22% success)
+- **ORCA** ⚠ - output files (25% success - NO official ASE format, parses as XYZ/generic)
+- **NWChem** ⚠ - .nwi (input), .nwo (output) (17% success - formats: `nwchem-in`, `nwchem-out`)
+- **Quantum Espresso** ⚠ - .pwi (input), .pwo, .out (output) (untested)
+- **CASTEP** ✗ - .castep, .cell, .geom, .md, .phonon (0% success - format detection issues)
+- **CP2K** ✗ - .dcd only (0% success - NO output file parser, only `cp2k-dcd` format)
+- **ABINIT** ✗ - GSR files, input/output (0% success - format exists but fails)
+- **Crystal** ✗ - .f34, .34 only (0% success - only fort.34 format, not standard outputs)
+- **GPAW** - output files, .gpw (17% success)
+- **ONETEP** - input/output (13% success)
+- **Octopus** - inp (input) (33% success)
+- **SIESTA** - .XV files, STRUCT (untested)
+- **Turbomole** - coord, gradient (untested)
+- **ELK** - GEOMETRY.OUT (untested)
+- **Exciting** - input.xml, INFO.out (0% success - format exists but fails)
+- **QBOX** - output files (untested)
+- **Dacapo** - text output (untested)
+
+Legend: ✓✓✓ Excellent | ✓✓ Good | ✓ Works | ⚠ Partial | ✗ Fails
+(Success rates from 889-file NOMAD stress test)
 
 ### Molecular Dynamics:
 - **LAMMPS** - data files, dump files (text/binary)
@@ -126,7 +129,7 @@ This parser leverages ASE's extensive I/O capabilities to read 80+ file formats.
 - `center_of_mass` - COM position (3, Angstrom)
 - `moments_of_inertia` - Principal moments (3, amu·Angstrom²)
 - `angular_momentum` - Total angular momentum (3, amu·Angstrom²/fs)
-- `volume` - Unit cell volume (Angstrom³)
+- `volume` - Unit cell volume (Angstrom³) - **None for molecular systems** (non-periodic)
 - `temperature` - Kinetic temperature (Kelvin)
 - `dipole_moment` - Electric dipole (3, eA)
 
@@ -143,60 +146,35 @@ All vector and tensor fields are validated using Pydantic constraints:
 
 ## Best Practices
 
-1. **Format Detection**: ASE auto-detects most formats, but you can specify: `ase_parse_file_to_model(filepath, format='vasp')`
-2. **Calculator Properties**: Forces, energy, stress require a calculator attachment
-3. **Periodic Systems**: Use `scaled_positions` for fractional coordinates
-4. **Large Files**: ASE handles trajectories efficiently
-5. **Compressed Files**: ASE supports .gz, .bz2, .xz compression
+1. **Format Detection**: ASE auto-detects most formats by extension, but you can specify explicitly:
+   - `ase_parse_file_to_model(filepath, format='gaussian-out')` for Gaussian .log files
+   - `ase_parse_file_to_model(filepath, format='vasp')` for POSCAR/CONTCAR
+   - **Note**: Format names are case-sensitive! Use `gaussian-out`, NOT `gaussian-log` or `g09`
 
-## Limitations
+2. **Calculator Properties**: Forces, energy, stress require a calculator attachment and may be None
 
-- Binary Gaussian .chk files not supported (use .fchk)
-- Some calculator-specific properties may not be available
-- Format detection may require file content inspection
+3. **Periodic vs Molecular Systems**:
+   - Periodic (PBC=True): `volume` contains unit cell volume, use `scaled_positions` for fractional coordinates
+   - Molecular (PBC=False): `volume` will be None (this is correct, not a bug!)
+
+4. **Large Files**: ASE handles trajectories efficiently - parser takes first frame by default
+
+5. **Compressed Files**: ASE supports .gz, .bz2, .xz compression automatically
+
+## Limitations & Known Issues
+
+### General Limitations
+- Binary Gaussian .chk files not supported (use .fchk formatted checkpoint files)
+- Some calculator-specific properties (forces, energy, stress) require calculator attachment
+- Format detection may require file content inspection for ambiguous extensions
 - Very specialized formats may need explicit format specification
 
-## Known Issues & Surprises (from stress testing 889 files)
-
-### Volume Field for Molecular Systems
-**Behavior**: Non-periodic molecular systems (PBC=[False,False,False]) will have `volume: None`
-**Reason**: ASE's `get_volume()` raises ValueError for systems without unit cells
-**Impact**: This is correct - molecules don't have unit cell volume
-**Solution**: Volume field is Optional, None is expected for molecular systems
-
-### Unexpected Format Support
-
-**ORCA Files (24.6% success)**:
-- ASE has NO registered 'orca' format, yet many ORCA files parse successfully
-- Files likely parse as XYZ or other generic formats
-- Check `source_format` field to see what format was detected
-
-**GAMESS Files (48.8% success)**:
-- ASE has NO documented 'gamess' format, yet files parse
-- GAMESS may output in XYZ or Gaussian-compatible formats
-- Files may auto-detect as 'gaussian-out' or similar
-
-### Format Name Inconsistencies
-
-**Correct ASE format names** (case-sensitive):
-- Gaussian: `gaussian` (input), `gaussian-out` (output) ✓
-- NWChem: `nwchem-in`, `nwchem-out` ✓
-- CASTEP: `castep-castep`, `castep-cell`, `castep-geom` ✓
-- NOT: 'gaussian-log', 'g09', 'g16', 'orca' ✗
-
-### Formats With Zero Support
-
-**CP2K**: Only `cp2k-dcd` format exists - no output file parser
-**Crystal**: Only `.f34`/`.34` files - not standard output files
-**LAMMPS**: Has formats but may not match your file type
-
-### Stress Test Results
-- **Total files tested**: 889 from NOMAD database
-- **Overall success rate**: 20.1% (after ValueError fix)
-- **Best performers**: VASP (44.4%), Gaussian (83.3%), GAMESS (48.8%)
-- **Complete failures**: CP2K, CASTEP, ABINIT, Crystal, exciting (0%)
-
-See `stress_test_report.md` for full analysis.
+### Format-Specific Issues
+- **ORCA**: No official ASE format exists, but files may parse as XYZ or generic formats (check `source_format`)
+- **GAMESS**: No explicit ASE format, but outputs in XYZ/Gaussian-compatible formats that parse successfully
+- **CP2K**: Only `cp2k-dcd` trajectory format supported - no output file parser
+- **Crystal**: Only supports `.f34`/`.34` (fort.34) files - standard output files not supported
+- **CASTEP/ABINIT/exciting**: Formats exist in ASE but have detection/compatibility issues with NOMAD files
 
 ## Extensibility
 
