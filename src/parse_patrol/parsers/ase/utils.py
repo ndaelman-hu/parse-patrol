@@ -392,6 +392,15 @@ def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
             f"This may be an auxiliary output file (logs, symmetry info), "
             f"an incomplete file, or an unsupported file variant."
         )
+    except UnicodeDecodeError as e:
+        # UnicodeDecodeError typically means the file is binary, not text
+        # Common for FORTRAN unformatted output files (e.g., exciting *.OUT)
+        raise ValueError(
+            f"File appears to be binary data, not a text file. "
+            f"This is likely a FORTRAN unformatted output or proprietary binary format. "
+            f"ASE only supports text-based output files. "
+            f"(Original error: {str(e)[:100]})"
+        )
     # ase.io.read can return Atoms or list[Atoms] for trajectories - take first structure
     if isinstance(data, list):
         data = data[0]
