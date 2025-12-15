@@ -35,6 +35,14 @@ parser_configs = [
         "prompts": ["iodata_test_prompt"]
     },
     {
+        "name": "ASE parser",
+        "module": ".parsers.ase.__main__", 
+        "imports": ["ase_parse_file_to_model", "ase_test_prompt"],
+        "tools": ["ase_parse_file_to_model"],
+        "resources": ["ase_documentation"],
+        "prompts": ["ase_test_prompt"]
+    },
+    {
         "name": "NOMAD database",
         "module": ".databases.nomad.__main__",
         "imports": ["search_nomad_entries", "get_nomad_raw_files", "get_nomad_archive", "nomad_materials_prompt"],

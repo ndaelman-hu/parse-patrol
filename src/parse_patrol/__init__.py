@@ -27,6 +27,7 @@ PARSERS = [
     (".parsers.cclib.utils", "cclib_parse", "CCDataModel", "cclib"),
     (".parsers.gaussian.utils", "gaussian_parse", "CustomGaussianDataModel", "gaussian"),
     (".parsers.iodata.utils", "iodata_parse", "IODataModel", "iodata"),
+    (".parsers.ase.utils", "ase_parse", "ASEDataModel", "ase"),
 ]
 
 # Import available parsers
