@@ -382,7 +382,16 @@ def ase_parse(filepath: str, format: str | None = None) -> ASEDataModel:
     Returns:
         ASEDataModel with parsed data converted for JSON serialization.
     """
-    data: ase.Atoms | list[ase.Atoms] = ase.io.read(filepath, format=format)
+    try:
+        data: ase.Atoms | list[ase.Atoms] = ase.io.read(filepath, format=format)
+    except StopIteration:
+        # StopIteration occurs when ASE's file parser yields no structures
+        # This typically means the file doesn't contain parseable structure data
+        raise ValueError(
+            f"No atomic structures found in file. "
+            f"This may be an auxiliary output file (logs, symmetry info), "
+            f"an incomplete file, or an unsupported file variant."
+        )
     # ase.io.read can return Atoms or list[Atoms] for trajectories - take first structure
     if isinstance(data, list):
         data = data[0]
