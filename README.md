@@ -192,6 +192,18 @@ parse-patrol/
 └── LICENSE
 ```
 
+## Benchmark
+
+The [`benchmarks/`](benchmarks/) package measures how reliably the wrapped
+parsers (ASE, cclib, iodata, custom Gaussian) actually extract structured data
+from real, heterogeneous computational-chemistry files harvested from NOMAD. The
+short version: on the primary output file NOMAD designates per entry, no single
+parser exceeds ~24% success, and even an oracle that picks the best parser per
+file solves only 45% — a rigorous negative baseline for the reliability of the
+tools agentic systems depend on. See [`benchmarks/README.md`](benchmarks/README.md)
+to reproduce and [`benchmarks/report.md`](benchmarks/report.md) for the full
+results.
+
 ## Development
 
 Develop servers for each tool individually. Each tool has its own dedicated folder under `src/parsers/`. Define their MCP servers in `__main__.py`.
