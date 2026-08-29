@@ -101,10 +101,16 @@ async def run_one(task: Dict[str, Any], arm: str, rep: int, model: str,
 
     run_id = f"{task['task_id']}__{arm}__{rep}"
     out_json = os.path.join(runs_dir, f"{run_id}.output.json")  # where the AGENT writes
+    # NONE is the no-harness baseline: no parse-patrol MCP server and no parser
+    # tools at all, so the agent must extract and map from scratch with code alone.
+    if arm == "NONE":
+        allowed_tools, mcp_servers = BUILTIN_TOOLS, {}
+    else:
+        allowed_tools, mcp_servers = PARSE_PATROL_TOOLS + BUILTIN_TOOLS, MCP_SERVERS
     options = ClaudeAgentOptions(
         system_prompt=system_prompt(arm, task.get("format_level")),
-        allowed_tools=PARSE_PATROL_TOOLS + BUILTIN_TOOLS,
-        mcp_servers=MCP_SERVERS,  # type: ignore[arg-type]
+        allowed_tools=allowed_tools,
+        mcp_servers=mcp_servers,  # type: ignore[arg-type]
         permission_mode="bypassPermissions",
         model=model,
         max_turns=max_turns,

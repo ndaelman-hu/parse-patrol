@@ -16,6 +16,10 @@
 
 % Scaffold marker for pending content.
 \newcommand{\pending}[1]{\textcolor{gray}{[\textsc{pending}: #1]}}
+% Thematic annotation (authoring aid): briefly flags a paragraph's theme in place of a
+% bold run-in header. Non-bold; toggle off for camera-ready with \showthemefalse.
+\newif\ifshowtheme\showthemetrue
+\newcommand{\theme}[1]{\ifshowtheme{\normalfont\sffamily\footnotesize\color{gray}[\,#1\,]\ }\fi}
 
 \title{Competence is not Performance: Where Coding Agents Actually Parse\\
 Along the Language-Complexity Hierarchy}
@@ -28,96 +32,151 @@ Along the Language-Complexity Hierarchy}
 \maketitle
 
 \begin{abstract}
-A coding agent can emit code in a Turing-complete language, so it is routinely
-\emph{assumed} able to solve information-processing tasks of arbitrary complexity.
-That is a statement about expressive \emph{competence}, not realized
-\emph{performance}. We make the assumption explicit and measure it, using the
-first and most overlooked step of any processing chain---\textbf{parsing}---as the
-probe, and real computational-chemistry output files as the test case. We place
-each extraction on the language-complexity hierarchy (Chomsky, refined by Joshi's
-mildly-context-sensitive band), and separate a second, orthogonal factor:
-\emph{grammar-availability} (does a tested parser already exist?). Exposing tested
-community parsers to the agent through an MCP harness, we vary the documentation and
-scaffolding the agent receives and record its workload, chain-of-thought, and a
-failure-mode taxonomy \emph{indexed by grammatical class}. \pending{headline
-numbers from the full agent sweep.} Preliminary component measurements already show
-the gap: on real primary-output files, structure recovery falls sharply with
-grammatical class, and the deciding factor is not grammatical simplicity but whether
-a grammar was \emph{supplied}. We frame the harness's role accordingly: it does not
-grant the agent new expressive power (the agent could synthesize the parser itself)
-but reduces the \emph{cost} of realizing it.
+Agentic systems are entering the molecular sciences as co-scientists that plan, call
+domain tools, and reason over the results of simulations. Every such system rests on
+a first, unglamorous step: turning a computation's raw output files into structured
+data---\textbf{parsing}. This grounding step spans a wide range of computational
+complexity, yet is assumed to ``just work,'' because a coding agent can emit code in
+a Turing-complete language and is therefore taken to solve processing tasks of
+arbitrary difficulty. That is a claim about expressive \emph{competence}, not
+realized \emph{performance}---Chomsky's own distinction. We make the assumption
+explicit and measure it: we place each extraction on the language-complexity
+hierarchy (Chomsky, refined by Joshi's mildly-context-sensitive band) and separate a
+second factor---whether a tested grammar is \emph{supplied}. Using real
+computational-chemistry output as the test case and an MCP parser harness whose
+documentation we vary, we record the agent's workload, chain-of-thought, and a
+failure-mode taxonomy \emph{indexed by grammatical class}. \pending{headline numbers
+from the full agent sweep.} Preliminary component measurements already show the
+gap---recovery falls sharply with grammatical class, decided less by grammatical
+simplicity than by whether a grammar was supplied. We then show the harness is not
+just diagnostic but a \emph{remedy}: supplying tested grammars and documentation
+\emph{measurably mitigates the drop-off} \pending{by X}, recovering exactly the
+\emph{interface} (offloadable) failures while the residual \emph{reasoning} failures
+at the context-sensitive level persist. Its role is thus not to grant new expressive
+power (the agent could synthesize the parser itself) but to reduce the \emph{cost} of
+realizing it.
 \end{abstract}
 
 \section{Introduction}
 
-\textbf{The assumption.} A coding agent emits code in a Turing-complete language, so
-it is treated as able to solve arbitrarily complex processing tasks. This conflates
-several claims---that the model's forward pass is Turing-complete (under idealized
-precision/steps), that chain-of-thought lifts it, that it can \emph{emit} a
-Turing-complete language (trivially true)---none of which establish the one that
-matters: that the agent \emph{reliably produces a correct artifact} for a task of a
-given complexity.
+\theme{the assumption}When a coding agent is dropped into a scientific workflow, we
+tend to assume it can handle whatever data processing the workflow throws at it. The
+reasoning is seductive: the agent writes code, code is a Turing-complete medium, and a
+Turing-complete medium can express any computable transformation, so any task that is
+computable at all should be within reach. The assumption is rarely stated outright,
+yet it is what licenses deploying agents as general-purpose glue between scientific
+tools and the data they emit.
 
-\textbf{Competence vs.\ performance.} This is Chomsky's own distinction. Expressive
-\emph{competence} is an upper bound on what could be represented, not evidence it
-will be found. The expressivity literature makes this explicit---capacity does not
-imply generalization \citep{deletang2023chomsky}, finite precision collapses the
-idealized bounds \citep{merrill2024cot}---yet agentic-systems work routinely leaves
-it implicit. We treat it as a hypothesis to \emph{measure}.
+\theme{competence vs.\ performance}It conflates two things, and the distinction
+between them is old. Chomsky drew it as \emph{competence} versus \emph{performance}
+\citep{chomsky1965}: what a system can in principle represent is not what it reliably
+does. Merely being able to \emph{emit} a Turing-complete language is trivial and says
+nothing about whether the right program will be found, and even the stronger formal
+results are heavily hedged---a transformer's forward pass is Turing-complete only
+under idealized unbounded precision and unbounded intermediate computation
+\citep{perez2021}, and chain-of-thought extends its reach only within comparable
+limits \citep{merrill2024cot}. Where the gap between what a model \emph{could}
+represent and what it \emph{does} realize has been measured directly, it proves real
+and it widens with difficulty: networks with ample capacity to fit their training data
+still fail to generalize across the Chomsky hierarchy \citep{deletang2023chomsky}, and
+frontier models that could in principle decompose a compositional problem instead
+retreat to shortcut pattern-matching and degrade as the problem grows
+\citep{dziri2023}. Expressive competence, then, is an upper bound on what might be
+represented, not evidence that it will be; we treat it as a hypothesis to measure
+rather than a premise to assume.
 
-\textbf{A hierarchy of complexity.} Tasks admit a principled scale: the Chomsky
-hierarchy (regular $\subsetneq$ context-free $\subsetneq$ context-sensitive
-$\subsetneq$ recursively enumerable), refined between context-free and
-context-sensitive by Joshi's \emph{mildly context-sensitive} band and the LCFRS
-fan-out ladder. We place each extraction on this scale, and keep a second factor
-\emph{separate}: \emph{grammar-availability}---whether a designed, tested parser
-already exists for the format (a context-free XML file is grammatically \emph{more}
-complex than a regular ad-hoc log, yet far easier to extract, because its grammar is
-supplied).
+\theme{complexity hierarchy}Measuring it takes a principled notion of what makes one
+processing task harder than another, and formal language theory provides one. The
+Chomsky hierarchy \citep{chomsky1956} ranks a language by the machinery its recognizer
+needs. A \emph{regular} language can be read with finite state alone---a regular
+expression; a \emph{context-free} language needs a stack, to follow nesting and
+recursion; a \emph{context-sensitive} language must enforce agreement or counting
+across the whole input, as in ``declare $N$ items, then produce exactly $N$,'' which no
+stack alone can do; and at the top, \emph{recursively enumerable} languages allow
+arbitrary and possibly non-terminating computation. Because the jump from context-free
+to context-sensitive is so wide, a finer band was singled out between them---Joshi's
+\emph{mildly context-sensitive} languages \citep{joshi1985} and the LCFRS fan-out
+ladder \citep{seki1991}---which captures bounded counting and cross-serial
+dependencies while still parsing in polynomial time, and which is where most real data
+turns out to sit. Grammatical class, however, is only half of what makes a format hard
+in practice. The other half is whether a grammar is actually \emph{available}, in the
+sense that someone has already designed and tested a parser for it, and the two come
+apart cleanly: a context-free XML file is grammatically more complex than a regular,
+ad-hoc log, yet far easier to extract, precisely because its grammar has been supplied.
+Keeping intrinsic class and grammar-availability separate is what lets us attribute a
+success or failure to the right cause---and, as we will see, it is the second factor,
+not the first, that a harness can move.
 
-\textbf{Parsing as the probe.} We measure realized capability at the first,
-under-studied step of any information-processing chain: parsing. Recent work grades
-LLM \emph{formal-language} recognition across the Chomsky hierarchy while scaling
-input length (ChomskyBench, \citealt{chomskybench}; RELIC, \citealt{relic}), our
-nearest baselines---on \emph{synthetic} languages. We differ on four axes: real
-heterogeneous scientific output rather than abstract strings; a
-\emph{harness/documentation} manipulation; competence-vs-performance on a real
-\emph{code-artifact} task (produce a working parser/pipeline, not recognize a
-string); and a failure-mode taxonomy \emph{indexed by grammatical class}.
+\theme{parsing as probe}Parsing is an unusually clean place to look for this gap. It
+is the first step of nearly every information-processing chain and the least examined,
+yet on real inputs it already spans the whole hierarchy, from trivially regular tables
+to cross-referential multi-file formats. The nearest prior measurements grade language
+models on formal-language recognition across the Chomsky hierarchy as input length
+grows \citep{chomskybench, relic}; we take them as a starting point but change what is
+at stake. They use synthetic strings and ask the model to \emph{recognize} membership;
+we use real, heterogeneous scientific output and ask the agent to \emph{build a working
+artifact}---a parser or extraction pipeline that returns correct structured data. And
+instead of a single accuracy number, we vary the support the agent is given and index
+its failures by grammatical class, so that we can see not only where performance breaks
+down but why, and what brings it back.
 
-\textbf{Test case.} Real computational-chemistry / ab initio output files: hard,
-heterogeneous, and where a parsing failure is a \emph{scientific} failure---the
-downstream analysis silently grounds on nothing.
+\theme{test case}The output we parse is real computational-chemistry data: the logs
+and restart files that ab initio simulations produce. They are a demanding instance,
+heterogeneous across codes, weakly standardized, and dense with exactly the counting
+and cross-reference structure that occupies the fragile middle of the hierarchy---and
+they raise the stakes, because a silent parsing failure here is a silent
+\emph{scientific} failure, with the downstream analysis grounding on nothing at all.
 
 \section{The system under test: an MCP parser harness}
 
-We use an open dual-mode parser harness. Community parsers are exposed both as
-\textbf{MCP tools} (for interactive discovery) and as \textbf{direct Python
-imports} (for production), with a \textbf{documentation/scaffolding layer}
-(per-parser docs, capability metadata, prompts). It was originally built to
-\emph{facilitate parser onboarding into a materials database (NOMAD)}, and later
-extended toward \emph{community-wide information exchange}---parsers as shared,
-discoverable, testable components. It is the right instrument here because it lets us
-vary precisely the documentation and tool access the agent receives, and measure the
-effect on realized performance.
+The instrument for this study is a dual-mode scientific parsing framework built on the
+Model Context Protocol (MCP), introduced recently at a community hackathon on
+language-model applications in materials science and chemistry \citep{hackathon2025}.
+It wraps a set of existing, independently maintained community parsers and exposes each
+of them two ways at once: as an MCP tool that an agent can discover and call
+interactively, and as a direct Python import that a production pipeline can depend on.
+Around the parsers sits a documentation layer---per-parser descriptions of the formats
+each one handles, machine-readable capability metadata, and prompt scaffolding---whose
+motivating purpose was to automate the testing and deployment of parsers as they are
+onboarded, lowering the cost of contributing a new parser to a shared materials
+database and, more broadly, letting a community exchange parsing capability as tested,
+discoverable components rather than re-implement it each time. That same layered design
+is what makes the framework a clean measurement instrument. Because the parsers, their
+documentation, and their tool exposure are separable, we can give the agent any subset
+of them while holding everything else fixed---varying exactly how much the harness
+reveals, and reading off the effect on what the agent manages to produce.
 
 \section{Method}
 
-\paragraph{Two difficulty axes.}
-(i) \emph{Source complexity} --- each format's grammatical class (regular /
-context-free / mildly context-sensitive / context-sensitive), with
-grammar-availability as a separate factor.
-(ii) \emph{Target complexity} --- from a bounded target (fill a fixed schema) up to a
-Turing-complete target (generate an executable code artifact, e.g.\ a
-PySCF script), so output difficulty also spans the hierarchy.
+\theme{two axes}The experiment varies difficulty along two axes at once. The first is
+the \emph{source}: the grammatical class of the format being read---regular,
+context-free, mildly context-sensitive, or context-sensitive---held apart from
+grammar-availability, so that having or lacking a tested parser is measured as its own
+factor rather than folded into the class. The second is the \emph{target}: how hard the artifact
+the agent must \emph{produce} is. This is a generation problem, not a recognition one,
+so it is deliberately \emph{not} the Chomsky ladder a second time---the output's
+surface syntax (a JSON object, a Python script) is cheap to emit and, if re-parsed
+downstream, cheap to recognize. What scales here is \emph{semantic} correctness: a
+bounded target (fill a fixed schema) has a finite, field-checkable output space,
+whereas a Turing-complete target (generate an executable artifact such as a PySCF input
+script) has an unbounded one whose correctness is undecidable in general. Source
+difficulty is thus a question of \emph{recognition} (the Chomsky hierarchy), target
+difficulty a question of \emph{synthesis} and verifiability---two different axes, kept
+separate on purpose.
 
-\paragraph{The scaffolding variable (documentation arms).} The agent is given a
-source file and a target schema, the parser tools, and code execution. Only the
-documentation in its system prompt varies: \textsc{bare} (tools only) $\to$
-\textsc{docs} (+ per-parser docs) $\to$ \textsc{full} (+ cross-parser capability map)
-$\to$ \textsc{complexity} (+ the source's class and each tool's power ceiling).
+\theme{arms}What we vary is how much of that harness the agent receives. In every arm
+it is given the source file, the target schema, and the ability to run code; the arms
+differ only in the support layered on top. At one extreme (\textsc{none}) the agent
+gets no harness at all and must write its parser from scratch. From there we add
+support one layer at a time: exposing the parsers as callable tools but nothing more
+(\textsc{bare}), then adding their per-parser documentation (\textsc{docs}), then a
+cross-parser capability map of which tool recovers which property (\textsc{full}), and
+finally an annotation of the source's grammatical class together with each tool's
+parsing-power ceiling (\textsc{complexity}). The step from \textsc{none} to the rest
+isolates the value of the harness itself; the steps among the remaining arms isolate
+the value of the documentation built on top of it.
 
-\paragraph{Instrumentation.} Per run we record tool calls, turns, tokens, the agent's
+\theme{instrumentation}Per run we record tool calls, turns, tokens, the agent's
 \emph{chain-of-thought}, and a validated failure-mode taxonomy (wrong-tool,
 silent-empty-accepted, parser-from-scratch, hallucinated-field, unit-error,
 retry-loop, gave-up), indexed by grammatical class $\times$ target complexity $\times$
@@ -137,6 +196,13 @@ class rises---but the effect is dominated by \emph{grammar-availability}: the on
 structured (context-free) format with a supplied XML grammar is recovered every time,
 while ``simpler'' regular logs with no canonical grammar are not. Grammatical class is
 thus necessary but not sufficient; a supplied grammar is what makes extraction cheap.
+The \emph{census} of formats is itself informative and skewed toward the fragile
+middle: of the primary outputs, the large majority (44 of 51) are mildly
+context-sensitive free-form logs, only a handful (4) are context-free formats with a
+supplied grammar, and the remainder (3) are context-sensitive multi-file outputs.
+The band where realized extraction is most fragile---and where the harness's
+mitigation concentrates---is therefore the \emph{common} case for real ab initio
+output, not an edge case.
 
 \begin{table}[t]
 \centering\small

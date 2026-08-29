@@ -4,6 +4,9 @@ Only the scaffold text added to the system prompt differs across arms; the tool
 set and the task prompt are held constant, so any difference in the agent's
 behaviour is attributable to the scaffold *knowledge*, not to tool availability.
 
+    NONE  no harness at all: the parse-patrol MCP server and parser tools are
+          withheld (see run.py), so the agent must extract and map from scratch with
+          code alone. This is the baseline that isolates the harness's value.
     BARE  base only. The agent knows the four parsers exist (their tool names are
           visible) but gets no guidance on which handles which format.
     DOCS  base + each parser's own documentation (the formats it supports).
@@ -19,6 +22,17 @@ from __future__ import annotations
 import importlib
 from functools import lru_cache
 from typing import Any, List
+
+NONE_SYSTEM = """\
+You are a coding agent that extracts data from a computational-chemistry output \
+file and writes it into a fixed target JSON schema.
+
+You have no specialized parsers available. Write and run your own code (you may \
+write Python and install libraries) to read the file, extract the requested \
+fields, convert them to the schema's canonical units, and write the resulting JSON \
+to the path given in the task. Do not invent values that are not present in the \
+file.\
+"""
 
 BASE_SYSTEM = """\
 You are a coding agent that extracts data from a computational-chemistry output \
@@ -108,6 +122,8 @@ _TOOL_POWER = (
 
 
 def system_prompt(arm: str, format_level: str | None = None) -> str:
+    if arm == "NONE":
+        return NONE_SYSTEM
     if arm == "BARE":
         return BASE_SYSTEM
     docs = f"{BASE_SYSTEM}\n\n# Parser documentation\n\n{docs_text()}"
@@ -123,4 +139,4 @@ def system_prompt(arm: str, format_level: str | None = None) -> str:
     raise ValueError(f"unknown arm: {arm}")
 
 
-ARMS = ["BARE", "DOCS", "FULL", "COMPLEXITY"]
+ARMS = ["NONE", "BARE", "DOCS", "FULL", "COMPLEXITY"]
