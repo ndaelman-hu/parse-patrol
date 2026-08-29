@@ -211,13 +211,15 @@ succeeding parsers.
 
 As a component measurement motivating the axes, we benchmarked four community parsers
 on 1{,}104 real files across 16 simulation codes, scoring whether an atomic structure
-was recovered. Reliability is low even on the primary-output file (Table~\ref{tab:rel}),
-and failures are often \emph{silent} (an empty-but-valid object, no exception).
-Re-cutting by grammatical class (Table~\ref{tab:class}) shows recovery falling as
-class rises---but the effect is dominated by \emph{grammar-availability}: the one
-structured (context-free) format with a supplied XML grammar is recovered every time,
-while the plainer free-form logs with no canonical grammar are not. Grammatical class is
-thus necessary but not sufficient; the presence of a supplied grammar largely
+was recovered. Reliability is low even on the primary-output file---no single parser
+exceeds \(24\%\), and an oracle that accepts \emph{any} parser's output still recovers
+only \(45\%\)---and failures are often \emph{silent} (an empty-but-valid object, no
+exception). Re-cut by grammatical class, recovery falls as class rises---context-free
+with a supplied grammar \(100\%\), mildly context-sensitive \(43\%\), context-sensitive
+\(0\%\)---but the effect is dominated by \emph{grammar-availability}, not class as such:
+the ``harder'' context-free format is recovered every time \emph{because} its grammar is
+supplied, while the plainer free-form logs with no canonical grammar are not. Grammatical
+class is thus necessary but not sufficient; the presence of a supplied grammar largely
 determines extraction cost.
 The distribution of formats is skewed toward the middle of the hierarchy: of the primary outputs, the large majority (44 of 51) are mildly
 context-sensitive free-form logs, only a handful (4) are context-free formats with a
@@ -314,44 +316,7 @@ small $N$; and the main agent-sweep results are \pending{in progress}.
 \appendix
 \section{Supplementary material}
 
-We tabulate here the preliminary component results summarized in \S\ref{sec:prelim}:
-per-parser structure-recovery reliability (Table~\ref{tab:rel}) and the same recovery
-re-cut by grammatical class (Table~\ref{tab:class}). \pending{full per-run agent results,
-the target-complexity cut, and chain-of-thought transcripts.}
-
-\begin{table}[h]
-\centering\small
-\begin{tabular}{lcc}
-\toprule
-Parser & All files & Primary output \\
-\midrule
-A (atomistic) & 3.9\% & 23.5\% \\
-B (quantum-chem) & 15.4\% & 21.6\% \\
-C (regex) & 2.4\% & 7.8\% \\
-D (I/O lib) & 10.5\% & 5.9\% \\
-\midrule
-\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
-\bottomrule
-\end{tabular}
-\caption{Structure-recovery reliability (preliminary component result).}
-\label{tab:rel}
-\end{table}
-
-\begin{table}[h]
-\centering\small
-\begin{tabular}{lc}
-\toprule
-Source class (primary output) & Oracle recovery \\
-\midrule
-context-free, grammar supplied (e.g.\ XML) & 100\% \\
-mildly context-sensitive (free-form log, count-agreement) & 43\% \\
-context-sensitive (cross-referential / multi-file) & 0\% \\
-\bottomrule
-\end{tabular}
-\caption{Re-cut by grammatical class: recovery falls as class rises, but the
-context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
-simplicity (preliminary).}
-\label{tab:class}
-\end{table}
+\pending{full per-run agent results, the target-complexity cut, chain-of-thought
+transcripts, and the per-parser reliability and by-class recovery breakdowns.}
 
 \end{document}
