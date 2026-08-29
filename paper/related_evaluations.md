@@ -106,6 +106,22 @@ we do not repeat them. Two arXiv-only 2025/2026 items carry `[title-to-confirm]`
   agent up the hierarchy" is **theirs** — our contribution must be the empirical
   measurement and the format-complexity-conditioned prediction, not this theorem.*
 
+### B6b. Failure *modes* by language level (with / without CoT)
+- **Liu et al. 2023, "Transformers Learn Shortcuts to Automata," ICLR 2023 (oral)**
+  (arXiv:2210.10749). A low-depth transformer can represent any finite-state
+  automaton via *shortcut* solutions (o(T) layers) that then **fail to
+  length-generalize** — a failure *mechanism* tied to the automaton/level.
+- **Dziri et al. 2023, "Faith and Fate: Limits of Transformers on
+  Compositionality," NeurIPS 2023 (Spotlight)** (arXiv:2305.18654). Transformers
+  reduce multi-step reasoning to *linearized subgraph matching* and **fail as graph
+  width and depth grow** — a compositional/graph hardness axis. *(Doubles as the
+  Axis-B graph-complexity bridge.)*
+- **CoT changes the profile:** without CoT the failure is the one-shot bound
+  (AC⁰/TC⁰; Li et al. 2024); with CoT the model climbs but exhibits serial-error
+  modes. *No located work cross-tabulates a coding-agent **failure-mode taxonomy**
+  (silent-empty / wrong-tool / retry-loop / gave-up) against **Chomsky level ×
+  CoT-on/off** — see Part C.*
+
 ### B7. Program-synthesis / inductive-programming complexity
 - **Polozov & Gulwani 2015, "FlashMeta: A Framework for Inductive Program
   Synthesis," OOPSLA 2015**, and **Gulwani, "Programming by Examples," 2016.**
@@ -164,6 +180,20 @@ scientific parser code-generation — using the established tool-expressivity th
 as the *predictive frame*, not as a claimed result. The parser-*selection* problem
 specifically (choosing among wrapped parsers) remains a gap; the closest transfer
 is the LLM tool-selection literature (ToolLLM, Gorilla), which we adapt.
+
+**Two sharper white-space claims (both survive the literature check):**
+1. **A failure-mode taxonomy indexed by language level.** Capability-by-level maps
+   exist (Delétang 2023) and failure *mechanisms* exist (Liu 2023; Dziri 2023), but
+   **no work cross-tabulates a coding-agent failure-mode taxonomy against Chomsky
+   level × CoT-on/off.** Doing so for scientific parser codegen — *which* failure
+   mode dominates at L0 vs L2 vs L3, with and without the harness — is a distinct
+   contribution.
+2. **The right formalism is two-axis.** The Chomsky/string hierarchy governs file
+   *syntax* (Axis A); the *chemical* target is graph-structured, better graded by
+   graph grammars (MØD, arXiv:1603.02481), designed molecular grammars (SELFIES,
+   arXiv:1905.13741), and graph descriptive complexity (Courcelle/treewidth). No
+   located work combines a string-syntax and a graph-structure hardness axis to
+   predict extraction/harness value — see `paper/format_semantic_hierarchy.md`.
 
 ---
 

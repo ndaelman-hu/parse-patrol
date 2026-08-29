@@ -269,11 +269,15 @@ agent-synthesized parsing. (3) \emph{Report the denominator.} Naive success rate
 understate parsers dramatically (3.9\% vs.\ 23.5\% for parser A); evaluations of
 tool reliability must state what set they score against.
 
-\paragraph{Outlook.} The power-gap hypothesis makes a testable prediction about
-\emph{agents}: giving a coding agent the source's complexity level and each tool's
-power ceiling should reduce wasted wrong-parser calls and trigger correct
-parser-from-scratch synthesis exactly where the fixed tools are under-powered. A
-controlled ablation of such scaffolding is our immediate next step.
+\paragraph{Outlook.} Because writing code is Turing-complete, an agent can in
+principle synthesize the needed parser itself; the harness's value is therefore not
+to enable the impossible but to reduce the \emph{cost} of the climb. The power-gap
+hypothesis thus predicts an \emph{efficiency} effect: giving a coding agent the
+source's complexity level and each tool's power ceiling should cut wasted
+wrong-parser calls and mis-triggered from-scratch synthesis, concentrated at
+L2--L3. Building on agent-scaffold ablations \citep{sweagent}, our next step
+measures this---and, to our knowledge for the first time, indexes a coding-agent
+failure-mode taxonomy by format-complexity level.
 
 \section*{Limitations}
 

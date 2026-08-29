@@ -170,6 +170,40 @@ powerful class of machine.
 
 ---
 
+## Which formalism for which axis? Chomsky for the bytes, graph-complexity for the chemistry
+
+The Chomsky (string) hierarchy fits **Axis A** because output *files are strings*.
+It is the *wrong* tool for **Axis B**: a molecule is a graph, a crystal is a
+periodic structure, a reaction is a graph rewrite — none are strings. Better-fitting
+formalisms for the chemical-structure axis:
+
+- **Graph grammars / double-pushout (DPO) graph rewriting** — the chemistry-native
+  analogue of a formal grammar. Concrete instance: **MØD** (Andersen, Flamm, Merkle
+  & Stadler, *A Software Package for Chemically Inspired Graph Transformation*,
+  arXiv:1603.02481): molecules are labelled graphs, reactions are direct
+  derivations, and graph *languages* are directed hypergraphs.
+- **A designed molecular formal language: SELFIES** (Krenn, Häse, Nigam, Friederich
+  & Aspuru-Guzik 2020, *Mach. Learn.: Sci. Technol.*, arXiv:1905.13741) — a formal
+  grammar in which *every* string is a valid molecule, vs. SMILES (~context-free with
+  ring-closure **cross-references** → mildly context-sensitive and fragile). Direct
+  evidence that a *designed* formal language beats an ad-hoc one for a chemical object.
+- **Graph descriptive complexity** — **Courcelle's theorem** (1990): MSO-definable
+  graph properties are decidable in linear time on graphs of **bounded treewidth**.
+  Treewidth / clique-width *grade* the structural hardness of a molecular or crystal
+  graph in a way the string classes cannot.
+- **Empirical bridge to failure**: Dziri et al. (*Faith and Fate*, NeurIPS 2023,
+  arXiv:2305.18654) model compositional tasks as **computation graphs** and show
+  transformers fail as **graph width and depth** grow — i.e. a *graph-structural*
+  hardness axis that predicts agent failure on structured targets better than a
+  string level.
+
+**Consequence.** Our S3 concepts — molecular connectivity, `GlobalCrystalSymmetry`
+(space group / Wyckoff), formula canonicalization — are *graph-reconstruction* or
+*group-theoretic computations*, **not string parses**. That is exactly why they sit
+in "derive/compute" (compensation mode 4). The two-axis model is therefore really
+**two hierarchies under two formalisms**: Chomsky over the bytes (Axis A),
+graph-complexity over the chemistry (Axis B).
+
 ## Provenance
 
 - Axis-A levels: structural signatures extracted from the corpus mainfiles
