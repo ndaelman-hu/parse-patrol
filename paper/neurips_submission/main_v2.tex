@@ -1,0 +1,211 @@
+\documentclass{article}
+
+% NeurIPS 2026 workshop style, double-blind submission. neurips_2026.sty bundled.
+% v2 SCAFFOLD (competence-vs-performance framing). Keeps existing benchmark +
+% complexity data as PRELIMINARY results; agent-sweep results are placeholders
+% pending the full run. No ad-hoc "L" labels (grammatical classes are used directly).
+\usepackage[dblblindworkshop]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+
+% Scaffold marker for pending content.
+\newcommand{\pending}[1]{\textcolor{gray}{[\textsc{pending}: #1]}}
+
+\title{Competence is not Performance: Where Coding Agents Actually Parse\\
+Along the Language-Complexity Hierarchy}
+
+\workshoptitle{ML4Molecules: Agentic Systems for Molecular Sciences (NeurIPS 2026)}
+
+\author{Anonymous Author(s)\\ Affiliation\\ Address\\ \texttt{email}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A coding agent can emit code in a Turing-complete language, so it is routinely
+\emph{assumed} able to solve information-processing tasks of arbitrary complexity.
+That is a statement about expressive \emph{competence}, not realized
+\emph{performance}. We make the assumption explicit and measure it, using the
+first and most overlooked step of any processing chain---\textbf{parsing}---as the
+probe, and real computational-chemistry output files as the test case. We place
+each extraction on the language-complexity hierarchy (Chomsky, refined by Joshi's
+mildly-context-sensitive band), and separate a second, orthogonal factor:
+\emph{grammar-availability} (does a tested parser already exist?). Exposing tested
+community parsers to the agent through an MCP harness, we vary the documentation and
+scaffolding the agent receives and record its workload, chain-of-thought, and a
+failure-mode taxonomy \emph{indexed by grammatical class}. \pending{headline
+numbers from the full agent sweep.} Preliminary component measurements already show
+the gap: on real primary-output files, structure recovery falls sharply with
+grammatical class, and the deciding factor is not grammatical simplicity but whether
+a grammar was \emph{supplied}. We frame the harness's role accordingly: it does not
+grant the agent new expressive power (the agent could synthesize the parser itself)
+but reduces the \emph{cost} of realizing it.
+\end{abstract}
+
+\section{Introduction}
+
+\textbf{The assumption.} A coding agent emits code in a Turing-complete language, so
+it is treated as able to solve arbitrarily complex processing tasks. This conflates
+several claims---that the model's forward pass is Turing-complete (under idealized
+precision/steps), that chain-of-thought lifts it, that it can \emph{emit} a
+Turing-complete language (trivially true)---none of which establish the one that
+matters: that the agent \emph{reliably produces a correct artifact} for a task of a
+given complexity.
+
+\textbf{Competence vs.\ performance.} This is Chomsky's own distinction. Expressive
+\emph{competence} is an upper bound on what could be represented, not evidence it
+will be found. The expressivity literature makes this explicit---capacity does not
+imply generalization \citep{deletang2023chomsky}, finite precision collapses the
+idealized bounds \citep{merrill2024cot}---yet agentic-systems work routinely leaves
+it implicit. We treat it as a hypothesis to \emph{measure}.
+
+\textbf{A hierarchy of complexity.} Tasks admit a principled scale: the Chomsky
+hierarchy (regular $\subsetneq$ context-free $\subsetneq$ context-sensitive
+$\subsetneq$ recursively enumerable), refined between context-free and
+context-sensitive by Joshi's \emph{mildly context-sensitive} band and the LCFRS
+fan-out ladder. We place each extraction on this scale, and keep a second factor
+\emph{separate}: \emph{grammar-availability}---whether a designed, tested parser
+already exists for the format (a context-free XML file is grammatically \emph{more}
+complex than a regular ad-hoc log, yet far easier to extract, because its grammar is
+supplied).
+
+\textbf{Parsing as the probe.} We measure realized capability at the first,
+under-studied step of any information-processing chain: parsing. Recent work grades
+LLM \emph{formal-language} recognition across the Chomsky hierarchy while scaling
+input length (ChomskyBench, \citealt{chomskybench}; RELIC, \citealt{relic}), our
+nearest baselines---on \emph{synthetic} languages. We differ on four axes: real
+heterogeneous scientific output rather than abstract strings; a
+\emph{harness/documentation} manipulation; competence-vs-performance on a real
+\emph{code-artifact} task (produce a working parser/pipeline, not recognize a
+string); and a failure-mode taxonomy \emph{indexed by grammatical class}.
+
+\textbf{Test case.} Real computational-chemistry / ab initio output files: hard,
+heterogeneous, and where a parsing failure is a \emph{scientific} failure---the
+downstream analysis silently grounds on nothing.
+
+\section{The system under test: an MCP parser harness}
+
+We use an open dual-mode parser harness. Community parsers are exposed both as
+\textbf{MCP tools} (for interactive discovery) and as \textbf{direct Python
+imports} (for production), with a \textbf{documentation/scaffolding layer}
+(per-parser docs, capability metadata, prompts). It was originally built to
+\emph{facilitate parser onboarding into a materials database (NOMAD)}, and later
+extended toward \emph{community-wide information exchange}---parsers as shared,
+discoverable, testable components. It is the right instrument here because it lets us
+vary precisely the documentation and tool access the agent receives, and measure the
+effect on realized performance.
+
+\section{Method}
+
+\paragraph{Two difficulty axes.}
+(i) \emph{Source complexity} --- each format's grammatical class (regular /
+context-free / mildly context-sensitive / context-sensitive), with
+grammar-availability as a separate factor.
+(ii) \emph{Target complexity} --- from a bounded target (fill a fixed schema) up to a
+Turing-complete target (generate an executable code artifact, e.g.\ a
+PySCF script), so output difficulty also spans the hierarchy.
+
+\paragraph{The scaffolding variable (documentation arms).} The agent is given a
+source file and a target schema, the parser tools, and code execution. Only the
+documentation in its system prompt varies: \textsc{bare} (tools only) $\to$
+\textsc{docs} (+ per-parser docs) $\to$ \textsc{full} (+ cross-parser capability map)
+$\to$ \textsc{complexity} (+ the source's class and each tool's power ceiling).
+
+\paragraph{Instrumentation.} Per run we record tool calls, turns, tokens, the agent's
+\emph{chain-of-thought}, and a validated failure-mode taxonomy (wrong-tool,
+silent-empty-accepted, parser-from-scratch, hallucinated-field, unit-error,
+retry-loop, gave-up), indexed by grammatical class $\times$ target complexity $\times$
+arm. Correctness is scored field-level against a reference built from the union of
+succeeding parsers.
+
+\section{Results}
+
+\subsection{Preliminary: the grounding layer and the grammar-availability effect}
+
+As a component measurement motivating the axes, we benchmarked four community parsers
+on 1{,}104 real files across 16 simulation codes, scoring whether an atomic structure
+was recovered. Reliability is low even on the primary-output file (Table~\ref{tab:rel}),
+and failures are often \emph{silent} (an empty-but-valid object, no exception).
+Re-cutting by grammatical class (Table~\ref{tab:class}) shows recovery falling as
+class rises---but the effect is dominated by \emph{grammar-availability}: the one
+structured (context-free) format with a supplied XML grammar is recovered every time,
+while ``simpler'' regular logs with no canonical grammar are not. Grammatical class is
+thus necessary but not sufficient; a supplied grammar is what makes extraction cheap.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+Parser & All files & Primary output \\
+\midrule
+A (atomistic) & 3.9\% & 23.5\% \\
+B (quantum-chem) & 15.4\% & 21.6\% \\
+C (regex) & 2.4\% & 7.8\% \\
+D (I/O lib) & 10.5\% & 5.9\% \\
+\midrule
+\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
+\bottomrule
+\end{tabular}
+\caption{Structure-recovery reliability (preliminary component result).}
+\label{tab:rel}
+\end{table}
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lc}
+\toprule
+Source class (primary output) & Oracle recovery \\
+\midrule
+context-free, grammar supplied (e.g.\ XML) & 100\% \\
+mildly context-sensitive (free-form log, count-agreement) & 43\% \\
+context-sensitive (cross-referential / multi-file) & 0\% \\
+\bottomrule
+\end{tabular}
+\caption{Re-cut by grammatical class: recovery falls as class rises, but the
+context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
+simplicity (preliminary).}
+\label{tab:class}
+\end{table}
+
+\subsection{Main: realized agent capability vs.\ complexity (overview)}
+
+\pending{overview from the full sweep --- a single figure/table of realized
+success vs.\ grammatical class $\times$ target complexity $\times$ documentation arm;
+the failure-mode distribution by class; and the arm effect. Hypotheses under test:
+(H1) realized success falls with class faster than a supplied-grammar baseline
+predicts; (H2) the documentation arms reduce workload and wrong-tool/silent-empty
+failures, concentrated in the mildly-context-sensitive band; (H3) at the
+context-sensitive / Turing-complete-target cells, the residual failures are the
+\emph{reasoning} modes (parser-from-scratch, compositional) that no harness removes.}
+Full per-run tables and chain-of-thought transcripts appear in the SI.
+
+\section{Discussion and outlook}
+
+The harness's value is not expressive: the agent could synthesize the missing parser
+itself (writing code is Turing-complete). Its value is to lower the \emph{cost} of
+realizing that competence---supplying tested grammars, flagging emptiness, and telling
+the agent when to escalate---so the offloadable (interface) failures shrink while the
+irreducible (reasoning) failures remain. \pending{quantified from the sweep.} The
+natural follow-up extends the target axis toward Turing-complete processing chains
+(most real pipelines are Turing-complete end to end); parsing is the tractable first
+step.
+
+\section*{Limitations}
+
+Preliminary results are a single database snapshot (52 entries, 16 codes); success is
+field presence, not correctness against ground truth; parsers run with defaults; the
+grammatical-class assignment is a documented ordinal partly confounded with program at
+small $N$; and the main agent-sweep results are \pending{in progress}.
+
+{\small
+\bibliographystyle{plainnat}
+\bibliography{refs}
+}
+
+\end{document}

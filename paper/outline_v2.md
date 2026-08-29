@@ -25,8 +25,12 @@ Working title (candidates):
 4. **Parsing as the probe.** We test realized capability at the *first, most
    overlooked step of any information-processing chain*: **parsing**. Novelty —
    the field studies downstream reasoning; the grounding/parsing step is
-   understudied. (Pending: deep-research confirmation that a frontier × Chomsky-
-   graded parsing × context-window benchmark is genuinely vacuous.)
+   understudied. Novelty is **not** Chomsky-grading LLM parsing — ChomskyBench
+   (Dong et al. 2026, arXiv:2604.02709) did that on *synthetic* languages and is our
+   nearest baseline — but doing it on **real heterogeneous scientific output**, with
+   a **harness/documentation manipulation**, measuring **competence vs. performance
+   on a real code-artifact task**, plus a **failure-mode taxonomy indexed by
+   grammatical class** (still unoccupied).
 5. **Test case.** Processing real **ab initio / molecular output data** — a hard,
    heterogeneous, real-world instance (not the subject, the instrument).
 

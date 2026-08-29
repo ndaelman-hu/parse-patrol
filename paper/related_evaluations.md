@@ -197,6 +197,34 @@ is the LLM tool-selection literature (ToolLLM, Gorilla), which we adapt.
 
 ---
 
+## A candidate gap that is NOT open (adversarially checked — do not claim it)
+
+We stress-tested a third potential novelty — *"no benchmark evaluates frontier LLMs
+on Chomsky-graded parsing while scaling input length"* — and it is **refuted**:
+
+- **ChomskyBench** — Dong et al., *Evaluating the Formal Reasoning Capabilities of
+  Large Language Models through the Chomsky Hierarchy* (arXiv:2604.02709, 2026).
+  Evaluates frontier LLMs (o3, GPT-5, GPT-4o, Gemini-2.5, Claude Sonnet-4,
+  DeepSeek-V3.1, Llama-4, Qwen3) on formal-language **recognition and generation
+  across all four Chomsky levels** while **varying input length**; accuracy falls
+  both *up the hierarchy* and *with length* (a "performance cliff" at CF→CS). This
+  occupies the full frontier × Chomsky-graded × length triple.
+- **RELIC** — Petty et al. (arXiv:2506.05205, NYU 2025). Frontier LLMs on
+  context-free recognition in-context with string-length scaling; "quiet quitting"
+  as complexity rises. Single level — near-miss.
+- **InductionBench** — Hua et al. (ACL 2025, arXiv:2502.15823). Frontier LLMs, but
+  the *subregular* hierarchy (below regular), not the Chomsky hierarchy proper.
+
+**Consequence for positioning.** We must **not** claim to be first to Chomsky-grade
+LLM parsing — ChomskyBench did, on *synthetic* languages. It is our **nearest
+baseline and strongest citation**, not a competitor. Our differentiation stands on
+four legs: (i) **real, heterogeneous scientific output files** vs. abstract formal
+languages; (ii) a **harness / documentation manipulation** — does tool-augmentation
++ scaffolding *move* realized capability?; (iii) **competence-vs-performance on a
+real code-artifact task** (produce a working parser/pipeline, not recognize a
+string); (iv) the **failure-mode taxonomy indexed by grammatical class** — still
+unoccupied. (Verified 3-0 against primary sources + the ChomskyBench repo.)
+
 ## Excluded — claims that did NOT survive adversarial verification (do not cite these)
 - ✗ *Gorilla (LLaMA-7B) outperforms GPT-4 on API accuracy by 20.43% / Claude by
   10.75% zero-shot* (arXiv:2305.15334) — refuted 0–3. Gorilla is real; this
