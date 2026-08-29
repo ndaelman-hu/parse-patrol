@@ -50,6 +50,11 @@ dev = [
     "types-requests>=2.31.0",
 ]
 
+# Agent scaffold study (experiment harness; drives the Claude Agent SDK)
+agent-study = [
+    "claude-agent-sdk>=0.1.0",
+]
+
 # Convenience groups
 all-parsers = [
     "parse-patrol[parsers,mcp]"

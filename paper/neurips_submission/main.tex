@@ -1,0 +1,293 @@
+\documentclass{article}
+
+% NeurIPS 2026 workshop style, double-blind submission.
+% The [dblblindworkshop] option gives the anonymized workshop format; do NOT add
+% [final] (that de-anonymizes for camera-ready). neurips_2026.sty is bundled here.
+\usepackage[dblblindworkshop]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{Silent Grounding Failures: A Formal-Complexity Account of\\
+Parser Reliability for Agentic Molecular Science}
+
+% Required by the NeurIPS 2026 workshop template.
+\workshoptitle{ML4Molecules: Agentic Systems for Molecular Sciences (NeurIPS 2026)}
+
+\author{%
+  Anonymous Author(s)\\
+  Affiliation\\
+  Address\\
+  \texttt{email}\\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Agentic ``co-scientists'' in the molecular sciences reason over the \emph{results}
+of simulations---geometries, energies, spectra, crystal structures---which they
+must first extract from the raw output files of quantum-chemistry and
+materials codes. This grounding step is universally assumed to work. We test the
+assumption. Exposing four widely used community parsers as agent tools, we
+benchmark them on 1{,}104 real files from 52 entries of a public materials
+database spanning 16 simulation codes, scoring by whether an atomic structure was
+actually recovered rather than by whether an exception was avoided. Reliability
+is poor and, worse, often \emph{silent}: on the single file each entry designates
+as its primary output, no parser exceeds 24\% success, an oracle picking the best
+parser per file reaches only 45\%, and one parser returns empty-but-valid objects
+without error on 98\% of inputs---indistinguishable from success to a calling
+agent. We then show these failures are not arbitrary. Classifying each format by
+the grammatical complexity its extraction demands (a coarse Chomsky-hierarchy
+ordinal), success falls monotonically with complexity: structured formats are
+grounded 100\% of the time, free-form logs 43\%, cross-referential multi-file
+outputs 0\%. We frame this as a \emph{power gap}: a fixed parser fails when the
+format's complexity exceeds its parsing power, which also predicts when an
+agent should stop calling tools and synthesize its own parser. Our results are a
+cautionary, rigorously-measured baseline for the data-grounding layer beneath
+agentic molecular science.
+\end{abstract}
+
+\section{Introduction}
+
+Recent work casts large language model agents as co-scientists that plan
+syntheses, orchestrate domain tools, and close experimental loops. Careful
+benchmarking keeps exposing fragility at surprisingly basic tasks---tool-augmented
+agents near 50\% on chemical cost estimation, single-cell foundation models that
+do not beat linear baselines. We add a data point beneath all of these: the point
+where an agent turns a simulation's \emph{output file} into the structured numbers
+it will reason over.
+
+Every agentic molecular workflow that consumes the results of a computation---to
+compare reaction energies, screen a crystal, fit an interatomic potential, or
+verify a geometry---must first parse those results out of a code's output. The
+community has mature parsers for this, and agent frameworks increasingly wrap them
+as callable tools. The implicit assumption is that these tools ``just work.'' When
+they do not, the failure is a scientific one: the agent reasons over an empty or
+wrong structure and reaches a confidently wrong molecular conclusion, with nothing
+in the pipeline to signal that the grounding step failed.
+
+We make two contributions. First (\S\ref{sec:bench}--\ref{sec:results}), a
+rigorous reliability benchmark of the grounding layer on real, heterogeneous
+simulation output, using a field-level success criterion (\emph{did we recover an
+atomic structure?}) rather than the weaker ``no exception raised.'' The picture is
+poor and frequently silent. Second (\S\ref{sec:complexity}), we show the failures
+are \emph{predictable}: classifying each source format by the grammatical
+complexity its extraction demands turns ``parsers fail unpredictably'' into a
+monotone law, and recasts the coding agent from a caller of tools into the
+mechanism that must climb the complexity hierarchy when the fixed tools are
+under-powered.
+
+\section{The grounding layer and how we benchmark it}
+\label{sec:bench}
+
+\paragraph{Corpus.} We draw 52 entries from a public computational-materials
+database, spanning 16 simulation codes (VASP, Gaussian, ORCA, GAMESS, exciting,
+CASTEP, CP2K, ABINIT, Crystal, FHI-aims, GPAW, ONETEP, NWChem, LAMMPS, Octopus,
+WIEN2k), comprising 1{,}104 raw files. Each entry carries an authoritative
+\emph{mainfile}: the single primary-output file the database designates as the
+entry's result. The corpus, program metadata, and mainfiles are frozen for
+reproducibility.
+
+\paragraph{Parsers as tools.} We evaluate four parsers exposed through a uniform
+\texttt{parse(path)$\rightarrow$model} tool interface: two general community
+libraries for atomistic and quantum-chemistry output, a general
+input/output library with format-specific grammars, and a custom regular-expression
+parser for one code. Each targets a common set of molecular quantities: formula,
+charge, multiplicity, atom count, Cartesian geometry, total/SCF energy,
+vibrational frequencies and IR intensities, and atomic charges.
+
+\paragraph{Two denominators.} We report every parser against (i) \emph{all files}
+in an entry---the naive ``point the tool at everything'' regime---and (ii)
+\emph{mainfile only}, the primary output. The gap separates ``failed on a file it
+never claimed to handle'' from genuine failure on the intended input.
+
+\paragraph{Field-level success, not ``no exception.''} Every parser returns an
+object whose fields are optional, so a parser can return an essentially empty
+object without raising. We therefore define \textbf{success} as recovering an
+atomic structure (atom count and coordinates), and separately track energy
+recovery. Each attempt is labelled \texttt{success}, \texttt{empty} (no exception,
+no structure---a \emph{silent} failure), \texttt{error} (exception; type
+recorded), or \texttt{timeout}. Parsers are never modified: their failures are the
+measurement.
+
+\section{The grounding layer is unreliable---and fails silently}
+\label{sec:results}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Parser & All files & Mainfile only \\
+\midrule
+Atomistic (A)      & 3.9\% (43/1104)  & 23.5\% (12/51) \\
+Quantum-chem (B)   & 15.4\% (170/1104)& 21.6\% (11/51) \\
+Custom regex (C)   & 2.4\% (26/1104)  & 7.8\% (4/51)   \\
+I/O library (D)    & 10.5\% (116/1104)& 5.9\% (3/51)   \\
+\midrule
+\textbf{Oracle (any parser)} & \textbf{20.5\% (226/1104)} & \textbf{45.1\% (23/51)} \\
+\bottomrule
+\end{tabular}
+\caption{Structure-recovery success. Even on the designated primary output, no
+single parser exceeds 24\%, and an oracle that picks the best parser per file
+solves under half; on the remaining 55\% of mainfiles no parser recovers a
+structure at all.}
+\label{tab:reliability}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Parser & Success & Empty (silent) & Error & Timeout \\
+\midrule
+Atomistic (A)    & 43  & 0    & 1061 & 0  \\
+Quantum-chem (B) & 170 & 39   & 849  & 46 \\
+Custom regex (C) & 26  & 1077 & 0    & 1  \\
+I/O library (D)  & 116 & 163  & 825  & 0  \\
+\bottomrule
+\end{tabular}
+\caption{Outcome breakdown (all files). The \emph{Empty} column is the hazard: the
+custom parser raises no exceptions yet returns a structureless object on 1077/1104
+inputs. A calling agent cannot distinguish these from success without inspecting
+the payload.}
+\label{tab:outcomes}
+\end{table}
+
+Table~\ref{tab:reliability} reports the headline. On the mainfile---the file the
+database itself flags as the result, where ``it just works'' should hold most
+strongly---no single parser exceeds 23.5\%, and the oracle reaches 45.1\%.
+
+\paragraph{Failures are often silent.} Table~\ref{tab:outcomes} shows the more
+dangerous pattern. Exceptions are catchable; a structureless object returned
+\emph{without} an exception is not. The custom parser never raises and yet grounds
+nothing on 98\% of files; the I/O library and quantum-chemistry parser do the same
+on many others. An agent that guards only against exceptions---the common
+case---will silently ingest nothing and reason on it.
+
+\paragraph{Failure taxonomy.} The dominant explicit failure is \emph{format not
+recognized}: for the atomistic parser, unknown-file-type (39\%), premature
+end-of-iteration on truncated or malformed files (21\%), value errors (16\%), and
+Unicode-decode errors on binary interleaving (13\%); for the quantum-chemistry
+parser, 95\% of exceptions are its ``format unrecognized'' signal; for the I/O
+library, 97\%. Recovery of a total energy is even rarer than structure---the
+atomistic parser recovers an energy on 0 of 51 mainfiles, reading geometries but
+not the energetics an agent usually wants.
+
+\section{A formal-complexity account of the failures}
+\label{sec:complexity}
+
+These parsers are hand-written scanners over Fortran/C \texttt{write}-statement
+output, not generated from grammars. Whether one succeeds should therefore depend
+on the grammatical complexity extraction demands versus the class of languages the
+parser can recognize. We make this precise with a coarse ordinal inspired by the
+Chomsky hierarchy---a documented rubric, not a formal per-file classification:
+\textbf{L0} grammar-defined/structured (XML, JSON, checkpoint/orbital files;
+context-free); \textbf{L1} line-regular records (regular); \textbf{L2} free-form
+logs with count-agreement (a header declares $N$ atoms, then $N$ lines follow;
+repeated blocks where the last must be taken; mildly context-sensitive);
+\textbf{L3} cross-referential or multi-file outputs (values defined in one
+file/section and combined in another; context-sensitive).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+Level & A & B & C & D & Oracle \\
+\midrule
+L0 (structured)        & 100\% (4/4)  & 0\%          & 0\%         & 0\%          & \textbf{100\% (4/4)} \\
+L2 (free-form log)     & 18.2\% (8/44)& 25.0\% (11/44)& 9.1\% (4/44)& 6.8\% (3/44) & \textbf{43.2\% (19/44)} \\
+L3 (cross-referential) & 0\% (0/3)    & 0\%          & 0\%         & 0\%          & \textbf{0\% (0/3)} \\
+\bottomrule
+\end{tabular}
+\caption{Mainfile structure-recovery re-cut by format complexity. Oracle success
+falls monotonically as complexity rises: structured formats are grounded every
+time, free-form logs under half, cross-referential outputs never.}
+\label{tab:complexity}
+\end{table}
+
+\paragraph{The power gap.} Table~\ref{tab:complexity} re-cuts the mainfile results
+by level. Oracle success is monotone: L0 100\%, L2 43\%, L3 0\%. This supports a
+\emph{power-gap hypothesis}: a fixed parser fails when the source's level exceeds
+its parsing-power ceiling (regex parsers are regular; stateful scanners handle
+counting; only grammar-backed readers reach context-free structure). It also
+reframes the coding agent: writing and running code is Turing-complete, so the
+agent's role is precisely to \emph{climb} the hierarchy---to synthesize a stateful
+or recursive parser when every fixed tool is under-powered. The same lens predicts
+when the agent should do so (L3 or unsupported formats) versus when it wastes
+effort re-implementing a tool that already covers the format (L0--L1).
+
+\paragraph{Complexity is necessary, not sufficient---three axes.} We are careful
+not to over-fit the hierarchy. Two large parts of the failure are orthogonal to
+grammatical complexity. \emph{Identification:} the dominant explicit failure was
+``format not recognized''---the parser never dispatched---which is a routing
+problem, not a power problem; indeed L0 files in program-specific schemas that no
+tool implements score 0\%, so context-free structure is necessary but not
+sufficient. \emph{Noise:} binary interleaving, truncation, and version drift break
+parsers on formats that are otherwise trivial. Extraction difficulty thus
+decomposes into three axes---\emph{identify}, \emph{parse}, \emph{denoise}---of
+which the Chomsky lens cleanly governs only the second. We also note a confound:
+at $N{=}4$ (L0) and $N{=}3$ (L3), level is partly collinear with program in this
+corpus, so the gradient is suggestive rather than causal.
+
+\paragraph{Relation to prior work.} Grouping tasks by the Chomsky hierarchy to
+predict neural generalization was established by \citet{deletang2023chomsky}, and a
+line of expressivity results shows chain-of-thought and tool use lift transformers
+toward Turing-completeness \citep{merrill2024cot,strobl2024survey}; we borrow this
+to justify the agent-as-escalator view rather than to contribute to it. Extracting
+structure from semi-structured machine text is the subject of automated log parsing
+\citep{zhu2019logparsing}, but that line mines recurring templates for anomaly
+detection, not conversion to a scientific target schema, and does not use a
+complexity lens. LLM schema-extraction in science targets natural-language prose
+\citep{dagdelen2024extraction}, a different regime from machine-emitted output
+files. The parsers we evaluate \citep{cclib} and the hierarchical target schema
+and per-code parser infrastructure of open materials databases
+\citep{ghiringhelli2023metadata} are the components we stress-test. To our
+knowledge, framing tool-layer reliability for output-file$\rightarrow$schema
+conversion as a parsing-power/format-complexity gap is new.
+
+\section{Implications for agentic molecular science}
+
+Three takeaways for systems that ground on simulation output. (1) \emph{Guard on
+content, not exceptions.} The silent-\texttt{empty} outcome shows exception
+handling is insufficient; a grounding tool must assert that scientific content was
+actually recovered before an agent reasons over it. (2) \emph{Route by complexity,
+and expect a ceiling.} Success is strongly format-dependent and the winning parser
+differs by domain, so a capability- and complexity-aware router over multiple
+parsers is the right architecture---but Table~\ref{tab:reliability} bounds what
+routing buys (45\% on primary files); the rest needs new parsers, format hints, or
+agent-synthesized parsing. (3) \emph{Report the denominator.} Naive success rates
+understate parsers dramatically (3.9\% vs.\ 23.5\% for parser A); evaluations of
+tool reliability must state what set they score against.
+
+\paragraph{Outlook.} The power-gap hypothesis makes a testable prediction about
+\emph{agents}: giving a coding agent the source's complexity level and each tool's
+power ceiling should reduce wasted wrong-parser calls and trigger correct
+parser-from-scratch synthesis exactly where the fixed tools are under-powered. A
+controlled ablation of such scaffolding is our immediate next step.
+
+\section*{Limitations}
+
+The corpus is a single snapshot of one materials database (52 entries, 16 codes);
+success is defined by field \emph{presence}, not correctness against ground truth,
+so a parser that recovers a \emph{wrong} structure counts as success; parsers are
+run with defaults and no format hints, which is an agent's default but not an
+expert's; the complexity levels are a coarse, documented ordinal rather than a
+formal classification, and are partly confounded with program at small $N$; and we
+benchmark the tools, not a live agent loop---the agentic ablation is future work.
+
+{\small
+\bibliographystyle{plainnat}
+\bibliography{refs}
+}
+
+\end{document}
