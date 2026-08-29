@@ -23,6 +23,7 @@
 % Double-blind toggle: \blindtrue = anonymized submission (hides tool name, NOMAD, and the
 % de-anonymizing hackathon cite). Set \blindfalse for the camera-ready to restore all names.
 \newif\ifblind\blindtrue
+\newcommand{\tbd}{\textcolor{gray}{$\bullet$}} % placeholder cell, pending the sweep
 
 \title{Competence is not Performance: Where Coding Agents Actually Parse\\
 Along the Language-Complexity Hierarchy}
@@ -215,62 +216,77 @@ and failures are often \emph{silent} (an empty-but-valid object, no exception).
 Re-cutting by grammatical class (Table~\ref{tab:class}) shows recovery falling as
 class rises---but the effect is dominated by \emph{grammar-availability}: the one
 structured (context-free) format with a supplied XML grammar is recovered every time,
-while ``simpler'' regular logs with no canonical grammar are not. Grammatical class is
+while the plainer free-form logs with no canonical grammar are not. Grammatical class is
 thus necessary but not sufficient; the presence of a supplied grammar largely
 determines extraction cost.
 The distribution of formats is skewed toward the middle of the hierarchy: of the primary outputs, the large majority (44 of 51) are mildly
 context-sensitive free-form logs, only a handful (4) are context-free formats with a
-supplied grammar, and the remainder (3) are context-sensitive multi-file outputs.
+supplied grammar, and the remainder (3) are context-sensitive multi-file outputs. No
+primary output was purely \emph{regular} (recognizable by finite state alone), so that
+rung is absent from this corpus and is omitted as a column from the class tables.
 The band where extraction is least reliable, and where the harness's
 mitigation concentrates, is therefore the common case for real ab initio
 output rather than a rare one.
 
+% Preliminary tables tab:rel and tab:class moved to the SI appendix (main text = 2 tables).
+
+\subsection{Main: realized capability and failure modes by arm}
+
+Table~\ref{tab:main} reports realized extraction success by grammatical class and arm,
+with a per-arm total; Table~\ref{tab:fail} reports the distribution of failure modes.
+\pending{numbers from the completed sweep.} Two contrasts carry the argument: the step
+from \textsc{none} to the tool arms isolates the value of the harness, and the gradient
+\textsc{bare}\,$\to$\,\textsc{complexity} the added value of documentation. We test (H1)
+that realized success falls with grammatical class faster than a supplied-grammar
+baseline predicts; (H2) that documentation reduces workload and the wrong-parser /
+silent-empty failures, concentrated in the mildly-context-sensitive band; and (H3) that
+at the context-sensitive and Turing-complete-target cells the residual failures are the
+\emph{reasoning} modes (parser-from-scratch, compositional) that no harness removes.
+Per-run results, the target-complexity cut, and chain-of-thought transcripts appear in
+the SI.
+
 \begin{table}[t]
 \centering\small
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-Parser & All files & Primary output \\
+ & CF/grammar & mildly-CS & context-sens.\ & \textbf{Total} \\
+Arm & ($n{=}4$) & ($n{=}30$) & ($n{=}1$) & ($n{=}35$) \\
 \midrule
-A (atomistic) & 3.9\% & 23.5\% \\
-B (quantum-chem) & 15.4\% & 21.6\% \\
-C (regex) & 2.4\% & 7.8\% \\
-D (I/O lib) & 10.5\% & 5.9\% \\
-\midrule
-\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
+\textsc{none} (no harness) & \tbd & \tbd & \tbd & \tbd \\
+\textsc{bare}              & \tbd & \tbd & \tbd & \tbd \\
+\textsc{docs}              & \tbd & \tbd & \tbd & \tbd \\
+\textsc{full}              & \tbd & \tbd & \tbd & \tbd \\
+\textsc{complexity}        & \tbd & \tbd & \tbd & \tbd \\
 \bottomrule
 \end{tabular}
-\caption{Structure-recovery reliability (preliminary component result).}
-\label{tab:rel}
+\caption{Realized extraction success (\%) by grammatical (Chomsky/Joshi) class and
+documentation arm, with the per-arm total over all tasks. The regular rung is omitted:
+no example occurred in the corpus (\S\ref{sec:prelim}). \pending{cells filled from the
+completed sweep; \tbd\ marks a value to be filled.}}
+\label{tab:main}
 \end{table}
 
 \begin{table}[t]
 \centering\small
-\begin{tabular}{lc}
+\begin{tabular}{lcccccc}
 \toprule
-Source class (primary output) & Oracle recovery \\
+Arm & wrong- & silent- & from- & unit & retry & gave- \\
+    & parser & empty & scratch & error & loop & up \\
 \midrule
-context-free, grammar supplied (e.g.\ XML) & 100\% \\
-mildly context-sensitive (free-form log, count-agreement) & 43\% \\
-context-sensitive (cross-referential / multi-file) & 0\% \\
+\textsc{none} (no harness) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+\textsc{bare}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+\textsc{docs}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+\textsc{full}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+\textsc{complexity}        & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
 \bottomrule
 \end{tabular}
-\caption{Re-cut by grammatical class: recovery falls as class rises, but the
-context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
-simplicity (preliminary).}
-\label{tab:class}
+\caption{Failure-mode counts by arm (full sweep). Modes: \emph{wrong-parser} (called a
+parser that cannot handle the format), \emph{silent-empty} (emitted output despite an
+empty parse), \emph{from-scratch} (hand-rolled a parser instead of using a tool),
+\emph{unit-error} (right value, wrong unit), \emph{retry-loop} ($\geq 3$ identical
+calls), \emph{gave-up} (missing core fields). \pending{cells from the completed sweep.}}
+\label{tab:fail}
 \end{table}
-
-\subsection{Main: realized agent capability vs.\ complexity (overview)}
-
-\pending{overview from the full sweep --- a single figure/table of realized
-success vs.\ grammatical class $\times$ target complexity $\times$ documentation arm;
-the failure-mode distribution by class; and the arm effect. Hypotheses under test:
-(H1) realized success falls with class faster than a supplied-grammar baseline
-predicts; (H2) the documentation arms reduce workload and wrong-tool/silent-empty
-failures, concentrated in the mildly-context-sensitive band; (H3) at the
-context-sensitive / Turing-complete-target cells, the residual failures are the
-\emph{reasoning} modes (parser-from-scratch, compositional) that no harness removes.}
-Full per-run tables and chain-of-thought transcripts appear in the SI.
 
 \section{Discussion and outlook}
 
@@ -294,5 +310,48 @@ small $N$; and the main agent-sweep results are \pending{in progress}.
 \bibliographystyle{plainnat}
 \bibliography{refs}
 }
+
+\appendix
+\section{Supplementary material}
+
+We tabulate here the preliminary component results summarized in \S\ref{sec:prelim}:
+per-parser structure-recovery reliability (Table~\ref{tab:rel}) and the same recovery
+re-cut by grammatical class (Table~\ref{tab:class}). \pending{full per-run agent results,
+the target-complexity cut, and chain-of-thought transcripts.}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+Parser & All files & Primary output \\
+\midrule
+A (atomistic) & 3.9\% & 23.5\% \\
+B (quantum-chem) & 15.4\% & 21.6\% \\
+C (regex) & 2.4\% & 7.8\% \\
+D (I/O lib) & 10.5\% & 5.9\% \\
+\midrule
+\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
+\bottomrule
+\end{tabular}
+\caption{Structure-recovery reliability (preliminary component result).}
+\label{tab:rel}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lc}
+\toprule
+Source class (primary output) & Oracle recovery \\
+\midrule
+context-free, grammar supplied (e.g.\ XML) & 100\% \\
+mildly context-sensitive (free-form log, count-agreement) & 43\% \\
+context-sensitive (cross-referential / multi-file) & 0\% \\
+\bottomrule
+\end{tabular}
+\caption{Re-cut by grammatical class: recovery falls as class rises, but the
+context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
+simplicity (preliminary).}
+\label{tab:class}
+\end{table}
 
 \end{document}
