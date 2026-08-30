@@ -12,6 +12,7 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{xcolor}
 
 % Scaffold marker for pending content.
@@ -362,10 +363,127 @@ parsing outcomes.
 }
 
 \appendix
-\section{Supplementary material}
+\newcommand{\cmark}{\checkmark}
+\newcommand{\xmark}{--}
 
-\pending{full per-run agent results, the target-complexity cut, chain-of-thought
-transcripts, and the per-parser reliability and by-class recovery breakdowns. GAMESS
-tasks are excluded (see Limitations).}
+\section{Experimental detail}
+
+Each run gives one coding agent (Claude Opus 4.8, via the Claude Agent SDK) a single
+source file, the fixed target schema, and code execution, capped at 30 turns and a
+per-run budget. The arms differ only in the system-prompt support: \textsc{none}
+withholds the parser tools entirely (the agent must write its own parser); \textsc{bare}
+exposes the parser tools with no guidance; \textsc{docs} adds each parser's format
+documentation; \textsc{full} adds a cross-parser capability map; \textsc{complexity} adds,
+for the specific source, its grammatical class and each tool's parsing-power ceiling with
+an escalation rule (``if no tool's power matches the format, write your own parser rather
+than call tools that return empty''). Success is field-level agreement with a reference
+built from the union of all succeeding parsers on that file. Failure-mode labels come from
+conservative, transcript-grounded detectors and are counts of runs \emph{exhibiting} each
+mode (a successful run may still have exhibited, e.g., a wrong-parser call en route).
+
+\section{Per-task outcomes}
+
+Table~\ref{tab:permatrix} gives the success of every arm on each of the 30 matched tasks.
+The pattern behind the aggregate numbers is visible here: on solvable tasks the tool arms
+match \textsc{none} or improve on it, while on the hard mildly-context-sensitive logs
+(ABINIT, CASTEP, CP2K, LAMMPS, Octopus, exciting) all arms fail---but, as
+Table~\ref{tab:fail} shows, the tool arms reach that failure by calling a mismatched
+parser and emitting an empty-but-accepted result, whereas \textsc{complexity} more often
+fails cleanly.
+
+\begin{table}[h]
+\centering\scriptsize
+\begin{tabular}{llccccc}
+\toprule
+Program & Class & \textsc{none} & \textsc{bare} & \textsc{docs} & \textsc{full} & \textsc{complexity} \\
+\midrule
+  VASP & CF & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  VASP & CF & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  VASP & CF & \xmark & \cmark & \cmark & \cmark & \cmark \\
+  VASP & CF & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  ABINIT & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  ABINIT & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  CASTEP & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  CASTEP & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  CP2K & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  Crystal & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  FHI-aims & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  FHI-aims & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  FHI-aims & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  FHI-aims & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  GPAW & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  GPAW & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  Gaussian & mCS & \xmark & \cmark & \cmark & \cmark & \cmark \\
+  Gaussian & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  Gaussian & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  Gaussian & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  LAMMPS & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  NWChem & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  NWChem & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  ONETEP & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  ONETEP & mCS & \xmark & \xmark & \xmark & \cmark & \cmark \\
+  ORCA & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  ORCA & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  ORCA & mCS & \cmark & \cmark & \cmark & \cmark & \cmark \\
+  Octopus & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+  exciting & mCS & \xmark & \xmark & \xmark & \xmark & \xmark \\
+\bottomrule
+\end{tabular}
+\caption{Per-task success (\cmark) by arm over the 30 matched tasks (CF: context-free with
+supplied grammar; mCS: mildly context-sensitive). Class column uses short labels.}
+\label{tab:permatrix}
+\end{table}
+
+\section{Representative chain-of-thought}
+
+The contrast is visible in the transcripts. On a CASTEP log (hard, no supplied grammar),
+the \textsc{bare} agent follows the tool affordance---``CASTEP is best handled by
+[two parsers]; let me parse with both''---then ``both parsers failed,'' and proceeds to
+emit a partly-empty result. The \textsc{complexity} agent, told the source is a free-form
+log outranking every available parser, skips the tools and reads the file directly
+(``this is a CASTEP single-point energy calculation; let me compute the conversions and
+write the output''). The difference is not capability---both can read a file---but knowing
+in advance that the tools will not fit.
+
+\section{Preliminary component results}
+
+Tables~\ref{tab:rel} and \ref{tab:class} give the parser-benchmark measurements
+summarized in \S\ref{sec:prelim}: per-parser structure-recovery reliability over 1{,}104
+files, and the same recovery re-cut by grammatical class.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+Parser & All files & Primary output \\
+\midrule
+A (atomistic) & 3.9\% & 23.5\% \\
+B (quantum-chem) & 15.4\% & 21.6\% \\
+C (regex) & 2.4\% & 7.8\% \\
+D (I/O lib) & 10.5\% & 5.9\% \\
+\midrule
+\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
+\bottomrule
+\end{tabular}
+\caption{Structure-recovery reliability (preliminary component result).}
+\label{tab:rel}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lc}
+\toprule
+Source class (primary output) & Oracle recovery \\
+\midrule
+context-free, grammar supplied (e.g.\ XML) & 100\% \\
+mildly context-sensitive (free-form log, count-agreement) & 43\% \\
+context-sensitive (cross-referential / multi-file) & 0\% \\
+\bottomrule
+\end{tabular}
+\caption{Re-cut by grammatical class: recovery falls as class rises, but the
+context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
+simplicity (preliminary).}
+\label{tab:class}
+\end{table}
 
 \end{document}
