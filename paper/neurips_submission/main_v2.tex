@@ -335,15 +335,16 @@ agent. The wrapped community parsers are not usable out of the box, and the info
 needed to match a file to the right parser is not reliably available: an agent that lacks
 it---whether guessing without documentation or trusting a capability map that overstates
 coverage---calls parsers that return nothing. This is a matching failure on the tooling
-side, not a mistake by the agent. Nor is the resulting emptiness caught downstream: the
-Pydantic output contract, as currently written, is permissive enough that a hollow parse
-still validates as a well-formed object, so the failure stays silent. Stricter constraints
-(required fields, non-empty collections, cross-field consistency) would reject these cases
-at the tool boundary, so this much is an implementation gap rather than a fundamental one.
-What no schema can verify is that a non-empty, internally consistent result carries the
-\emph{correct} values---semantic correctness against the source needs re-derivation or
-provenance, not type-checking. Both points are concrete notes for harness implementers and
-parser maintainers.
+side, not a mistake by the agent. The resulting emptiness also goes uncaught downstream, and here part of the shortfall is
+the harness's own doing: its Pydantic output contract is written permissively enough that
+a hollow parse still validates as a well-formed object, leaving the failure silent. That
+gap is squarely fixable---required fields, non-empty collections, and cross-field
+consistency checks would reject such results at the tool boundary. A systemic limit lies
+beyond it, however: no schema can confirm that a non-empty, internally consistent result
+holds the \emph{correct} values, which needs re-derivation or provenance rather than
+type-checking. The lesson cuts both ways---the contract should be tightened, but
+validation alone will not guarantee semantic correctness. Both points are concrete notes
+for harness implementers and parser maintainers.
 
 The more interesting signal runs the other way. What most improved the agent's behaviour
 was not more tooling but \emph{knowledge}: a short statement of where the source sits in
