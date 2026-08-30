@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{graphicx}
 \usepackage{xcolor}
 
 % Scaffold marker for pending content.
@@ -256,7 +257,7 @@ grammatical simplicity, is what makes extraction reliable.
 \label{sec:main}
 
 We compare all five arms on an identical set of 30 tasks (Table~\ref{tab:main} for
-success, Table~\ref{tab:fail} for failure modes; the single context-sensitive task is
+success, Figure~\ref{fig:fail} for failure modes; the single context-sensitive task is
 held out). These are observations from a first sweep, not confirmed effects: single runs
 per cell and one model preclude significance claims, and per-run results and
 chain-of-thought transcripts appear in the appendices. Three stand out, and none matches
@@ -305,28 +306,18 @@ class gradient (CF vs.\ mildly-CS) is the larger effect.}
 \label{tab:main}
 \end{table}
 
-\begin{table}[t]
-\centering\small
-\begin{tabular}{lcccccc}
-\toprule
-Arm & wrong- & silent- & from- & unit & retry & gave- \\
-    & parser & empty & scratch & error & loop & up \\
-\midrule
-\textsc{none} (no harness) & 0 & 0 & 12 & 1 & 0 & 14 \\
-\textsc{bare}              & 21 & 11 & 0 & 1 & 0 & 12 \\
-\textsc{docs}              & 19 & 11 & 1 & 1 & 0 & 12 \\
-\textsc{full}              & 21 & 11 & 2 & 0 & 0 & 11 \\
-\textsc{complexity}        & 2 & 1 & 1 & 0 & 0 & 11 \\
-\bottomrule
-\end{tabular}
-\caption{Failure-mode counts by arm over the same 30-task set. Modes: \emph{wrong-parser}
-(called a parser that cannot handle the format), \emph{silent-empty} (emitted output
-despite an empty parse), \emph{from-scratch} (hand-rolled a parser instead of using a
-tool), \emph{unit-error} (right value, wrong unit), \emph{retry-loop} ($\geq 3$ identical
-calls), \emph{gave-up} (missing core fields). Exposing tools introduces wrong-parser and
-silent-empty failures; only \textsc{complexity} removes them, while gave-up stays flat.}
-\label{tab:fail}
-\end{table}
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\linewidth]{fig_failuremodes.pdf}
+\caption{Failure-mode counts by arm over the 30-task set (overall success rate shown
+above each bar). \emph{Wrong-parser} (called a parser that cannot handle the format) and
+\emph{silent-empty} (emitted output despite an empty parse) are interface failures;
+\emph{from-scratch} hand-rolls a parser; \emph{gave-up} (missing core fields) is the
+reasoning failure. Exposing tools introduces the interface failures; only
+\textsc{complexity} removes them, while gave-up and overall success stay roughly flat. The
+near-zero unit-error and retry-loop modes ($\leq 1$ each) are omitted.}
+\label{fig:fail}
+\end{figure}
 
 \section{Discussion and outlook}
 
@@ -378,6 +369,9 @@ detectors, and the infrastructure exclusions---are detailed in the appendix.
 
 \section{Experimental detail}\label{app:setup}
 
+The harness and experiment code, anonymized for review, are available at
+\url{https://anonymous.4open.science/r/parse-patrol-C611/}.
+
 Each run gives one coding agent (Claude Opus 4.8, via the Claude Agent SDK) a single
 source file, the fixed target schema, and code execution, capped at 30 turns and a
 per-run spend budget; only the arm's system-prompt support varies, as described in the
@@ -401,7 +395,7 @@ Table~\ref{tab:permatrix} gives the success of every arm on each of the 30 match
 The pattern behind the aggregate numbers is visible here: on solvable tasks the tool arms
 match \textsc{none} or improve on it, while on the hard mildly-context-sensitive logs
 (ABINIT, CASTEP, CP2K, LAMMPS, Octopus, exciting) all arms fail---but, as
-Table~\ref{tab:fail} shows, the tool arms reach that failure by calling a mismatched
+Figure~\ref{fig:fail} shows, the tool arms reach that failure by calling a mismatched
 parser and emitting an empty-but-accepted result, whereas \textsc{complexity} more often
 fails cleanly.
 
