@@ -38,33 +38,19 @@ Along the Language-Complexity Hierarchy}
 \maketitle
 
 \begin{abstract}
-Agentic systems are entering the molecular sciences as co-scientists that plan, call
-domain tools, and reason over the results of simulations. Every such system rests on
-a first step: turning a computation's raw output files into structured
-data---\textbf{parsing}. This grounding step spans a wide range of computational
-complexity, yet is commonly assumed to work reliably, because a coding agent can emit code in
-a Turing-complete language and is therefore taken to solve processing tasks of
-arbitrary difficulty. This assumes expressive \emph{competence} in place of
-realized \emph{performance}, a distinction due to Chomsky. In this work we make that
-assumption explicit and measure it: we place each extraction on the language-complexity
-hierarchy (Chomsky, refined by Joshi's mildly-context-sensitive band) and separate a
-second factor---whether a tested grammar is \emph{supplied}. Using real
-computational-chemistry output as the test case and an MCP parser harness whose
-support we vary from none to complexity-aware, we run a first exploratory sweep (159
-runs, Claude Opus 4.8) and record the agent's workload, chain-of-thought, and a
-failure-mode taxonomy \emph{indexed by grammatical class}. The results are tentative but
-suggestive, and they are not the obvious story. Merely exposing tested parsers to the
-agent barely changes success, raises its workload, and \emph{introduces} silent
-interface failures---wrong-parser calls and empty-but-accepted outputs---that the
-from-scratch baseline never produces. What helps is telling the agent where the source
-sits on the hierarchy and where each tool's parsing power tops out: this annotation
-nearly removes those interface failures and restores near-baseline effort, while leaving
-success and the residual \emph{reasoning} failures (giving up on the core fields)
-essentially unchanged. A coding agent's realized parsing performance thus appears to
-depend less on \emph{access} to tested components than on \emph{knowing} their power
-relative to the task---a competence the harness can supply cheaply, but which raw tool
-provision does not. We report these as first observations and outline the larger study
-they motivate.
+Agentic systems for the molecular sciences rest on an unglamorous first step: turning a
+simulation's raw output into structured data by \textbf{parsing}. This is assumed to work
+because a coding agent emits Turing-complete code---a claim about expressive
+\emph{competence}, not realized \emph{performance} (Chomsky's distinction). We make it
+measurable: on real computational-chemistry output we vary an MCP parser harness from no
+support to complexity-aware, running a first sweep (159 runs, Claude Opus 4.8) that scores
+success, workload, and failure modes by grammatical class. The result is not the obvious
+one. Merely exposing tested parsers barely changes success, raises workload, and
+\emph{introduces} silent interface failures the from-scratch baseline never produces;
+what removes them---at near-baseline cost---is telling the agent where the source sits on
+the language hierarchy and where each tool's power ends, while reasoning failures persist.
+Realized parsing performance thus depends less on \emph{access} to tested tools than on
+\emph{knowing} their power relative to the task.
 \end{abstract}
 
 \section{Introduction}
