@@ -257,8 +257,10 @@ grammatical simplicity, is what makes extraction reliable.
 
 We compare all five arms on an identical set of 30 tasks (Table~\ref{tab:main} for
 success, Table~\ref{tab:fail} for failure modes; the single context-sensitive task is
-held out, see below). Three tentative observations stand out, and none matches the naive
-expectation that more harness monotonically means more success.
+held out). These are observations from a first sweep, not confirmed effects: single runs
+per cell and one model preclude significance claims, and per-run results and
+chain-of-thought transcripts appear in the appendices. Three stand out, and none matches
+the naive expectation that more harness monotonically means more success.
 
 \emph{(O1) Exposing tools barely moves success but adds cost and silent failures.} From
 \textsc{none} to the plain tool arms, total success rises only modestly (53\% to
@@ -279,10 +281,6 @@ nominally supports, appears to be the operative ingredient.
 essentially flat across every arm (11--14), including \textsc{none}. No level of harness
 support changed it, consistent with an irreducible reasoning component that tool
 knowledge cannot offload.
-
-We frame these as observations from a first sweep, not confirmed effects; single runs per
-cell and one model preclude significance claims. Per-run results and chain-of-thought
-transcripts appear in the appendices.
 
 \begin{table}[t]
 \centering\small
