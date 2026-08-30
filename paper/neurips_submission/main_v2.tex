@@ -221,36 +221,36 @@ definitive.
 \subsection{Preliminary: the grounding layer and the grammar-availability effect}
 \label{sec:prelim}
 
+Our test corpus is 1{,}104 real output files spanning 16 simulation codes, drawn from a
+public computational-materials database~\citep{draxl2019nomad} whose persistent
+identifiers let each file be traced. By grammatical class it is heavily skewed toward the
+middle of the hierarchy: of the primary-output files, 44 of 51 are mildly
+context-sensitive free-form logs and only four are context-free formats with a supplied
+grammar. The two extremes below Turing-completeness are barely present---none is purely
+\emph{regular} (Chomsky type~3, finite-state) and only three are \emph{context-sensitive}
+(type~1, cross-referential multi-file), too few to test. Our measurements therefore speak
+to the middle two rungs, which are also the common case for real ab initio output; we
+return to the extremes in the outlook.
+
 As a component measurement motivating the axes, we ran the four wrapped parsers
 themselves---three maintained community libraries plus a coarse regex parser standing in
-for regex-class tools---directly on 1{,}104 real files across 16 simulation codes (drawn
-from a public computational-materials database~\citep{draxl2019nomad}, whose persistent
-identifiers let each test file be traced), scoring whether an atomic structure was
-recovered. Each parser targets only a few of the codes, so no single one recovers
-structure from more than a quarter of the primary-output files---low by specialization,
-not by defect. The telling figure is that even a best-of-four selector that accepts
-\emph{any} parser's output, i.e.\ perfect routing among the four, recovers only \(45\%\):
-the available parser set collectively covers under half of this heterogeneous space. Its
-failures are also often \emph{silent}---the parser returns grammatically well-formed
-output that is nonetheless void or semantically corrupted, raising no exception. This
-measures the wrapped tools; the agent-generated code, which need not rely on any single
-parser, is the subject of \S\ref{sec:main}. Re-cut by grammatical class, recovery falls as class rises---context-free
-with a supplied grammar \(100\%\), mildly context-sensitive \(43\%\), context-sensitive
-\(0\%\)---but the effect is dominated by \emph{grammar-availability}, not class as such:
-the ``harder'' context-free format is recovered every time \emph{because} its grammar is
-supplied, while the plainer free-form logs with no canonical grammar are not. Grammatical
-class is thus necessary but not sufficient; the presence of a supplied grammar largely
-determines extraction cost.
-The distribution of formats is skewed toward the middle of the hierarchy: of the primary outputs, the large majority (44 of 51) are mildly
-context-sensitive free-form logs, only a handful (4) are context-free formats with a
-supplied grammar, and the remainder (3) are context-sensitive multi-file outputs. No
-primary output was purely \emph{regular} (recognizable by finite state alone), so that
-rung is absent from this corpus and is omitted as a column from the class tables.
-The band where extraction is least reliable---and, as the agent sweep below suggests,
-where harness support has the most effect on failure modes---is therefore the common
-case for real ab initio output rather than a rare one.
+for regex-class tools---directly on these files, scoring whether an atomic structure was
+recovered (Table~\ref{tab:rel}). Each parser targets only a few of the codes, so no single
+one recovers structure from more than a quarter of the primary-output files---low by
+specialization, not by defect. Even a best-of-four selector that accepts \emph{any}
+parser's output, i.e.\ perfect routing among the four, recovers only \(45\%\): the
+available parser set collectively covers under half of this heterogeneous space. Its
+failures are often \emph{silent}---the parser returns grammatically well-formed output
+that is nonetheless void or semantically corrupted, raising no exception. This measures
+the wrapped tools; the agent-generated code, which need not rely on any single parser, is
+the subject of \S\ref{sec:main}.
 
-% Preliminary tables tab:rel and tab:class moved to the appendix (main text = 2 tables).
+Re-cut by grammatical class (Table~\ref{tab:class}), best-of-four recovery is \(100\%\) on
+the context-free formats and \(43\%\) on the mildly context-sensitive logs. The gradient
+tracks grammar-availability rather than class as such: the context-free formats, though
+grammatically more complex, are recovered whenever a supplied grammar exists, whereas the
+plainer free-form logs without a canonical grammar are not. A supplied grammar, not
+grammatical simplicity, is what makes extraction reliable.
 
 \subsection{Main: realized capability and failure modes by arm}
 \label{sec:main}
@@ -344,12 +344,16 @@ failures (giving up on the core fields) held constant across every arm. If this 
 the harness's contribution is less to grant capability than to supply, cheaply, the
 knowledge of when a tool suffices and when to escalate.
 
-We stress that these are first observations. Several directions would test and extend
-them: repeated runs and additional models to establish significance and model-dependence;
-a larger, better-balanced corpus that can populate the context-sensitive rung we here had
-to hold out; and extending the target axis toward Turing-complete processing chains (most
-real pipelines are Turing-complete end to end), of which parsing is the tractable first
-step.
+We stress that these are first observations, and several directions follow. Repeated runs
+and additional models would establish significance and separate model-specific behaviour
+from general effects. A larger, better-balanced corpus could populate the two extremes we
+could not test here: the regular rung, and---more interesting---the context-sensitive
+rung, which for scientific output means \emph{multi-file} parsing, where a quantity
+defined in one file is referenced in another. The Turing-complete extreme (recursively
+enumerable) corresponds to parsing that requires arbitrary computation, i.e.\ code
+analysis; that regime is already heavily studied in the broader literature and is not
+specific to scientific data, so we treat it as a known bound rather than an immediate
+target.
 
 \section*{Limitations}
 
@@ -357,9 +361,9 @@ This is a first, small study and its numbers are indicative, not conclusive. The
 sweep uses a single model (Claude Opus 4.8), a single target schema, and one run per
 cell, so we make no significance claims and cannot separate model-specific behaviour from
 general effects. The corpus is one database snapshot (52 entries, 16 codes) skewed toward
-the mildly-context-sensitive band; the context-sensitive rung is represented by a single
-task and is therefore excluded from the results tables, pending a larger corpus that can
-test whether it behaves like the other rungs. Correctness is scored against a
+the mildly-context-sensitive band; the two extremes below Turing-completeness---regular
+and context-sensitive---are barely represented (no regular examples; a single
+context-sensitive task) and are excluded from the results tables, pending a larger corpus. Correctness is scored against a
 union-of-parsers reference rather than an independent ground truth; the failure-mode
 labels come from conservative heuristic detectors; the grammatical-class assignment is a
 documented ordinal partly confounded with program at small $N$; and three GAMESS tasks
@@ -492,11 +496,11 @@ Source class (primary output) & Best-of-four recovery \\
 \midrule
 context-free, grammar supplied (e.g.\ XML) & 100\% \\
 mildly context-sensitive (free-form log, count-agreement) & 43\% \\
-context-sensitive (cross-referential / multi-file) & 0\% \\
 \bottomrule
 \end{tabular}
-\caption{Re-cut by grammatical class: recovery falls as class rises, but the
-context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
+\caption{Best-of-four recovery by grammatical class, over the two well-populated rungs
+(the regular and context-sensitive extremes are under-represented in the corpus and
+omitted). The context-free ``100\%'' reflects a \emph{supplied} grammar, not grammatical
 simplicity (preliminary).}
 \label{tab:class}
 \end{table}
