@@ -20,7 +20,7 @@
 \newcommand{\pending}[1]{\textcolor{gray}{[\textsc{pending}: #1]}}
 % Thematic annotation (authoring aid): briefly flags a paragraph's theme in place of a
 % bold run-in header. Non-bold; toggle off for camera-ready with \showthemefalse.
-\newif\ifshowtheme\showthemetrue
+\newif\ifshowtheme\showthemefalse
 \newcommand{\theme}[1]{\ifshowtheme{\normalfont\sffamily\footnotesize\color{gray}[\,#1\,]\ }\fi}
 % Double-blind toggle: \blindtrue = anonymized submission (hides tool name, NOMAD, and the
 % de-anonymizing hackathon cite). Set \blindfalse for the camera-ready to restore all names.
