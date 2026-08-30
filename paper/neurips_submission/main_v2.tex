@@ -333,14 +333,14 @@ silent-empty failures; only \textsc{complexity} removes them, while gave-up stay
 At the tool level, these first sweeps read as feedback on the harness rather than the
 agent: the mismatches above are a failure of tooling, not of the agent, which merely acts
 on the unreliable or overstated information it is given. These tests also expose two
-structural shortcomings \ifblind in the MCP server itself\else on our own MCP server's
-side\fi. First, its capability metadata overstates which formats each parser handles, so
+structural shortcomings in the MCP server itself. First, its capability metadata
+overstates which formats each parser handles, so
 an agent that trusts it calls a parser that returns nothing. Second, its Pydantic output
 contract is permissive enough that a hollow parse validates as a well-formed object,
 leaving the emptiness silent. Both are addressable---through tighter capability
 descriptions and stricter output constraints (required fields, non-empty collections,
-cross-field consistency)---and \ifblind are slated for correction before the next round of
-tests\else we will address them before the next round of tests\fi. The semantic gap runs
+cross-field consistency)---and are slated for correction before the next round of
+tests. The semantic gap runs
 deeper: confirming that a non-empty, internally consistent result holds the \emph{correct}
 values exceeds what a permissive type contract can express, and may demand a more
 expressive discipline than Python affords---dependent types, for instance---or validation
