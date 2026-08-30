@@ -147,7 +147,8 @@ is one such harness\ifblind\else, \emph{Parse Patrol}\fi: a dual-mode scientific
 framework built on the Model Context Protocol (MCP)~\citep{mcp}, first released as
 \ifblind an open-source project\else part of a community hackathon on language-model
 applications in materials science and chemistry~\citep{hackathon2025}\fi.
-It wraps a set of existing, independently maintained community parsers and exposes each
+It wraps a set of existing, independently maintained community parsers (plus, for this
+study, a coarse regex parser standing in for regex-class tools) and exposes each
 of them in two ways: as an MCP tool that an agent can discover and call
 interactively, and as a direct Python import that a production pipeline can depend on. Both exposures return
 the same Pydantic-validated output model, so the data contract is identical whether a
@@ -220,12 +221,16 @@ definitive.
 \subsection{Preliminary: the grounding layer and the grammar-availability effect}
 \label{sec:prelim}
 
-As a component measurement motivating the axes, we benchmarked four community parsers
-on 1{,}104 real files across 16 simulation codes, scoring whether an atomic structure
-was recovered. Reliability is low even on the primary-output file---no single parser
-exceeds \(24\%\), and an oracle that accepts \emph{any} parser's output still recovers
-only \(45\%\)---and failures are often \emph{silent} (an empty-but-valid object, no
-exception). Re-cut by grammatical class, recovery falls as class rises---context-free
+As a component measurement motivating the axes, we benchmarked four parsers---three
+maintained community libraries plus a coarse regex parser included to represent
+regex-class tools---on 1{,}104 real files across 16 simulation codes (drawn from a public
+computational-materials database~\citep{draxl2019nomad}, whose persistent identifiers let
+each test file be traced), scoring whether an atomic structure was recovered. Reliability
+is low even on the primary-output file---no single parser exceeds \(24\%\), and a
+best-of-four selector that accepts \emph{any} of the parsers' output still recovers only
+\(45\%\)---and failures are often \emph{silent}: the parser returns grammatically
+well-formed output that is nonetheless void or semantically corrupted, raising no
+exception. Re-cut by grammatical class, recovery falls as class rises---context-free
 with a supplied grammar \(100\%\), mildly context-sensitive \(43\%\), context-sensitive
 \(0\%\)---but the effect is dominated by \emph{grammar-availability}, not class as such:
 the ``harder'' context-free format is recovered every time \emph{because} its grammar is
@@ -381,6 +386,11 @@ built from the union of all succeeding parsers on that file. Failure-mode labels
 conservative, transcript-grounded detectors and are counts of runs \emph{exhibiting} each
 mode (a successful run may still have exhibited, e.g., a wrong-parser call en route).
 
+The 16 simulation codes spanned by the corpus are ABINIT, CASTEP, CP2K, Crystal,
+exciting, FHI-aims, GAMESS, Gaussian, GPAW, LAMMPS, NWChem, Octopus, ONETEP, ORCA, VASP,
+and WIEN2k. Of these, GAMESS and one oversized GPAW output are excluded from the agent
+sweep for the infrastructure reasons noted in the Limitations.
+
 \section{Per-task outcomes}
 
 Table~\ref{tab:permatrix} gives the success of every arm on each of the 30 matched tasks.
@@ -462,7 +472,7 @@ B (quantum-chem) & 15.4\% & 21.6\% \\
 C (regex) & 2.4\% & 7.8\% \\
 D (I/O lib) & 10.5\% & 5.9\% \\
 \midrule
-\textbf{Oracle (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
+\textbf{Best-of-four (any)} & \textbf{20.5\%} & \textbf{45.1\%} \\
 \bottomrule
 \end{tabular}
 \caption{Structure-recovery reliability (preliminary component result).}
@@ -473,7 +483,7 @@ D (I/O lib) & 10.5\% & 5.9\% \\
 \centering\small
 \begin{tabular}{lc}
 \toprule
-Source class (primary output) & Oracle recovery \\
+Source class (primary output) & Best-of-four recovery \\
 \midrule
 context-free, grammar supplied (e.g.\ XML) & 100\% \\
 mildly context-sensitive (free-form log, count-agreement) & 43\% \\
