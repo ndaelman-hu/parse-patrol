@@ -221,16 +221,20 @@ definitive.
 \subsection{Preliminary: the grounding layer and the grammar-availability effect}
 \label{sec:prelim}
 
-As a component measurement motivating the axes, we benchmarked four parsers---three
-maintained community libraries plus a coarse regex parser included to represent
-regex-class tools---on 1{,}104 real files across 16 simulation codes (drawn from a public
-computational-materials database~\citep{draxl2019nomad}, whose persistent identifiers let
-each test file be traced), scoring whether an atomic structure was recovered. Reliability
-is low even on the primary-output file---no single parser exceeds \(24\%\), and a
-best-of-four selector that accepts \emph{any} of the parsers' output still recovers only
-\(45\%\)---and failures are often \emph{silent}: the parser returns grammatically
-well-formed output that is nonetheless void or semantically corrupted, raising no
-exception. Re-cut by grammatical class, recovery falls as class rises---context-free
+As a component measurement motivating the axes, we ran the four wrapped parsers
+themselves---three maintained community libraries plus a coarse regex parser standing in
+for regex-class tools---directly on 1{,}104 real files across 16 simulation codes (drawn
+from a public computational-materials database~\citep{draxl2019nomad}, whose persistent
+identifiers let each test file be traced), scoring whether an atomic structure was
+recovered. Each parser targets only a few of the codes, so no single one recovers
+structure from more than a quarter of the primary-output files---low by specialization,
+not by defect. The telling figure is that even a best-of-four selector that accepts
+\emph{any} parser's output, i.e.\ perfect routing among the four, recovers only \(45\%\):
+the available parser set collectively covers under half of this heterogeneous space. Its
+failures are also often \emph{silent}---the parser returns grammatically well-formed
+output that is nonetheless void or semantically corrupted, raising no exception. This
+measures the wrapped tools; the agent-generated code, which need not rely on any single
+parser, is the subject of \S\ref{sec:main}. Re-cut by grammatical class, recovery falls as class rises---context-free
 with a supplied grammar \(100\%\), mildly context-sensitive \(43\%\), context-sensitive
 \(0\%\)---but the effect is dominated by \emph{grammar-availability}, not class as such:
 the ``harder'' context-free format is recovered every time \emph{because} its grammar is
@@ -249,6 +253,7 @@ case for real ab initio output rather than a rare one.
 % Preliminary tables tab:rel and tab:class moved to the appendix (main text = 2 tables).
 
 \subsection{Main: realized capability and failure modes by arm}
+\label{sec:main}
 
 We compare all five arms on an identical set of 30 tasks (Table~\ref{tab:main} for
 success, Table~\ref{tab:fail} for failure modes; the single context-sensitive task is
