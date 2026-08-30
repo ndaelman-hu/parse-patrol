@@ -199,9 +199,7 @@ tokens, the agent's \emph{chain-of-thought}, and a failure-mode taxonomy scored 
 conservative, transcript-grounded detectors (wrong-parser, silent-empty-accepted,
 parser-from-scratch, unit-error, retry-loop, gave-up), indexed by grammatical class
 $\times$ arm. Correctness is scored field-level against a reference built from the union
-of succeeding parsers. This is a first, deliberately small sweep---one model, one target
-schema, single runs per cell---so we read the numbers as indicative rather than
-definitive.
+of succeeding parsers.
 
 \section{Results}
 
@@ -225,7 +223,7 @@ for regex-class tools---directly on these files, scoring whether an atomic struc
 recovered (Table~\ref{tab:rel}). Each parser targets only a few of the codes, so no single
 one recovers structure from more than a quarter of the primary-output files---low by
 specialization, not by defect. Even a best-of-four selector that accepts \emph{any}
-parser's output, i.e.\ perfect routing among the four, recovers only \(45\%\): the
+parser's output, i.e.\ an upper bound on what routing among them could achieve, recovers only \(45\%\): the
 available parser set collectively covers under half of this heterogeneous space. Its
 failures are often \emph{silent}---the parser returns grammatically well-formed output
 that is nonetheless void or semantically corrupted, raising no exception. This measures
@@ -237,7 +235,7 @@ the context-free formats and \(43\%\) on the mildly context-sensitive logs. The 
 tracks grammar-availability rather than class as such: the context-free formats, though
 grammatically more complex, are recovered whenever a supplied grammar exists, whereas the
 plainer free-form logs without a canonical grammar are not. A supplied grammar, not
-grammatical simplicity, is what makes extraction reliable.
+grammatical simplicity, appears to drive extraction reliability.
 
 \subsection{Main: realized capability and failure modes by arm}
 \label{sec:main}
@@ -246,8 +244,8 @@ We compare all five arms on an identical set of 30 tasks (Table~\ref{tab:main} f
 success, Figure~\ref{fig:fail} for failure modes; the single context-sensitive task is
 held out). These are observations from a first sweep, not confirmed effects: single runs
 per cell and one model preclude significance claims, and per-run results and
-chain-of-thought transcripts appear in the appendices. Three stand out, and none matches
-the naive expectation that more harness monotonically means more success.
+chain-of-thought transcripts appear in the appendices. Three results stand out; success
+does not rise monotonically with harness support.
 
 \emph{(O1) Exposing tools barely moves success but adds cost and silent failures.} From
 \textsc{none} to the plain tool arms, total success rises only modestly (53\% to
@@ -265,9 +263,8 @@ and where each tool's power tops out, rather than merely which formats each tool
 nominally supports, appears to be the operative ingredient.
 
 \emph{(O3) Reasoning failures are untouched.} The gave-up rate (missing core fields) is
-essentially flat across every arm (11--14), including \textsc{none}. No level of harness
-support changed it, consistent with an irreducible reasoning component that tool
-knowledge cannot offload.
+essentially flat across every arm (11--14), including \textsc{none}, and no harness
+variant we tested changed it.
 
 \begin{table}[t]
 \centering\small
@@ -323,14 +320,12 @@ values exceeds what a permissive type contract can express, and may demand a mor
 expressive discipline than Python affords---dependent types, for instance---or validation
 outside the type system altogether.
 
-The more interesting signal runs the other way. What most improved the agent's behaviour
+The larger effect is the opposite. What most improved the agent's behaviour
 was not more tooling but \emph{knowledge}: a short statement of where the source sits in
 the language hierarchy, and where each tool's power ends, collapsed the interface failures
-at no extra cost. That so lightweight a description of formal complexity changes how an
-agent parses is the thread worth pulling---why this particular context helps, and how the
-agent folds it into its reasoning, is best read from the chain-of-thought, and, with
-extending coverage to the multi-file (context-sensitive) case, is what we intend to develop
-as this work matures. The Turing-complete extreme, by contrast, amounts to code analysis
+at no extra cost. Why this context helps, and how the agent uses it, is best read from the
+chain-of-thought; extending coverage to the multi-file (context-sensitive) case is the
+next step. The Turing-complete extreme, by contrast, amounts to code analysis
 and is already well studied elsewhere---a known bound rather than a target for this line.
 
 \section*{Limitations}
@@ -338,8 +333,10 @@ and is already well studied elsewhere---a known bound rather than a target for t
 This is a first, small study and its numbers are indicative, not conclusive. The agent
 sweep uses a single model (Claude Opus 4.8), a single target schema, and one run per
 cell, so we make no significance claims and cannot separate model-specific behaviour from
-general effects. The corpus is a single database snapshot (52 entries, 16 codes) heavily
-skewed toward the mildly-context-sensitive band. Further methodological caveats---the
+general effects. The corpus is a single database snapshot (51 entries, 16 codes) heavily
+skewed toward the mildly-context-sensitive band, and the \textsc{complexity} arm bundles
+two cues---the source's grammatical class and each tool's power ceiling---that the design
+does not separate. Further methodological caveats---the
 union-of-parsers reference in place of independent ground truth, the heuristic failure
 detectors, and the infrastructure exclusions---are detailed in the appendix.
 
