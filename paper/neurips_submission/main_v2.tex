@@ -48,15 +48,21 @@ assumption explicit and measure it: we place each extraction on the language-com
 hierarchy (Chomsky, refined by Joshi's mildly-context-sensitive band) and separate a
 second factor---whether a tested grammar is \emph{supplied}. Using real
 computational-chemistry output as the test case and an MCP parser harness whose
-documentation we vary, we record the agent's workload, chain-of-thought, and a
-failure-mode taxonomy \emph{indexed by grammatical class}. \pending{headline numbers
-from the full agent sweep.} Preliminary component measurements already show the
-gap---recovery falls sharply with grammatical class, decided less by grammatical
-simplicity than by whether a grammar was supplied. We also evaluate the harness as an intervention: supplying tested grammars and documentation
-\emph{measurably mitigates the drop-off} \pending{by X}, recovering the
-\emph{interface} (offloadable) failures while the residual \emph{reasoning} failures
-at the context-sensitive level persist. The harness therefore reduces the \emph{cost} of realizing an artifact the agent
-could in principle synthesize itself, rather than extending what it can express.
+support we vary from none to complexity-aware, we run a first exploratory sweep (159
+runs, Claude Opus 4.8) and record the agent's workload, chain-of-thought, and a
+failure-mode taxonomy \emph{indexed by grammatical class}. The results are tentative but
+suggestive, and they are not the obvious story. Merely exposing tested parsers to the
+agent barely changes success, raises its workload, and \emph{introduces} silent
+interface failures---wrong-parser calls and empty-but-accepted outputs---that the
+from-scratch baseline never produces. What helps is telling the agent where the source
+sits on the hierarchy and where each tool's parsing power tops out: this annotation
+nearly removes those interface failures and restores near-baseline effort, while leaving
+success and the residual \emph{reasoning} failures (giving up on the core fields)
+essentially unchanged. A coding agent's realized parsing performance thus appears to
+depend less on \emph{access} to tested components than on \emph{knowing} their power
+relative to the task---a competence the harness can supply cheaply, but which raw tool
+provision does not. We report these as first observations and outline the larger study
+they motivate.
 \end{abstract}
 
 \section{Introduction}
@@ -197,12 +203,16 @@ parsing-power ceiling (\textsc{complexity}). The step from \textsc{none} to the 
 isolates the value of the harness itself; the steps among the remaining arms isolate
 the value of the documentation built on top of it.
 
-\theme{instrumentation}Per run we record tool calls, turns, tokens, the agent's
-\emph{chain-of-thought}, and a validated failure-mode taxonomy (wrong-tool,
-silent-empty-accepted, parser-from-scratch, hallucinated-field, unit-error,
-retry-loop, gave-up), indexed by grammatical class $\times$ target complexity $\times$
-arm. Correctness is scored field-level against a reference built from the union of
-succeeding parsers.
+\theme{instrumentation}All runs use a single coding agent (Claude Opus 4.8) driven
+through the Claude Agent SDK, with identical task prompts and per-run turn and budget
+caps; only the arm's system-prompt support differs. Per run we record tool calls, turns,
+tokens, the agent's \emph{chain-of-thought}, and a failure-mode taxonomy scored by
+conservative, transcript-grounded detectors (wrong-parser, silent-empty-accepted,
+parser-from-scratch, unit-error, retry-loop, gave-up), indexed by grammatical class
+$\times$ arm. Correctness is scored field-level against a reference built from the union
+of succeeding parsers. This is a first, deliberately small sweep---one model, one target
+schema, single runs per cell---so we read the numbers as indicative rather than
+definitive.
 
 \section{Results}
 
@@ -226,45 +236,63 @@ context-sensitive free-form logs, only a handful (4) are context-free formats wi
 supplied grammar, and the remainder (3) are context-sensitive multi-file outputs. No
 primary output was purely \emph{regular} (recognizable by finite state alone), so that
 rung is absent from this corpus and is omitted as a column from the class tables.
-The band where extraction is least reliable, and where the harness's
-mitigation concentrates, is therefore the common case for real ab initio
-output rather than a rare one.
+The band where extraction is least reliable---and, as the agent sweep below suggests,
+where harness support has the most effect on failure modes---is therefore the common
+case for real ab initio output rather than a rare one.
 
 % Preliminary tables tab:rel and tab:class moved to the SI appendix (main text = 2 tables).
 
 \subsection{Main: realized capability and failure modes by arm}
 
-Table~\ref{tab:main} reports realized extraction success by grammatical class and arm,
-with a per-arm total; Table~\ref{tab:fail} reports the distribution of failure modes.
-\pending{numbers from the completed sweep.} Two contrasts carry the argument: the step
-from \textsc{none} to the tool arms isolates the value of the harness, and the gradient
-\textsc{bare}\,$\to$\,\textsc{complexity} the added value of documentation. We test (H1)
-that realized success falls with grammatical class faster than a supplied-grammar
-baseline predicts; (H2) that documentation reduces workload and the wrong-parser /
-silent-empty failures, concentrated in the mildly-context-sensitive band; and (H3) that
-at the context-sensitive and Turing-complete-target cells the residual failures are the
-\emph{reasoning} modes (parser-from-scratch, compositional) that no harness removes.
-Per-run results, the target-complexity cut, and chain-of-thought transcripts appear in
-the SI.
+We compare all five arms on an identical set of 30 tasks (Table~\ref{tab:main} for
+success, Table~\ref{tab:fail} for failure modes; the single context-sensitive task is
+held out, see below). Three tentative observations stand out, and none matches the naive
+expectation that more harness monotonically means more success.
+
+\emph{(O1) Exposing tools barely moves success but adds cost and silent failures.} From
+\textsc{none} to the plain tool arms, total success rises only modestly (53\% to
+60--63\%), while average tool calls \emph{rise} (5.4 to 7.4) and two failure modes appear
+that the from-scratch baseline never exhibits: wrong-parser calls (0 to $\sim$21) and,
+more troubling, silent-empty outputs (0 to $\sim$11), where the agent accepts an empty
+parse and emits a hollow result with no error. Per-parser documentation
+(\textsc{docs}, \textsc{full}) does not remove these.
+
+\emph{(O2) The complexity annotation is what shifts the failure profile.} \textsc{complexity}
+attains the same success as \textsc{full} (63\%) but nearly eliminates the interface
+failures---wrong-parser $21\to2$, silent-empty $11\to1$---and returns effort to
+near-baseline (5.9 tool calls). Telling the agent where the source sits on the hierarchy
+and where each tool's power tops out, rather than merely which formats each tool
+nominally supports, appears to be the operative ingredient.
+
+\emph{(O3) Reasoning failures are untouched.} The gave-up rate (missing core fields) is
+essentially flat across every arm (11--14), including \textsc{none}. No level of harness
+support changed it, consistent with an irreducible reasoning component that tool
+knowledge cannot offload.
+
+We frame these as observations from a first sweep, not confirmed effects; single runs per
+cell and one model preclude significance claims. Per-run results and chain-of-thought
+transcripts appear in the SI.
 
 \begin{table}[t]
 \centering\small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
- & CF/grammar & mildly-CS & context-sens.\ & \textbf{Total} \\
-Arm & ($n{=}4$) & ($n{=}30$) & ($n{=}1$) & ($n{=}35$) \\
+ & CF/grammar & mildly-CS & \textbf{Total} \\
+Arm & ($n{=}4$) & ($n{=}26$) & ($n{=}30$) \\
 \midrule
-\textsc{none} (no harness) & \tbd & \tbd & \tbd & \tbd \\
-\textsc{bare}              & \tbd & \tbd & \tbd & \tbd \\
-\textsc{docs}              & \tbd & \tbd & \tbd & \tbd \\
-\textsc{full}              & \tbd & \tbd & \tbd & \tbd \\
-\textsc{complexity}        & \tbd & \tbd & \tbd & \tbd \\
+\textsc{none} (no harness) & 75 & 50 & 53 \\
+\textsc{bare}              & 100 & 54 & 60 \\
+\textsc{docs}              & 100 & 54 & 60 \\
+\textsc{full}              & 100 & 58 & 63 \\
+\textsc{complexity}        & 100 & 58 & 63 \\
 \bottomrule
 \end{tabular}
-\caption{Realized extraction success (\%) by grammatical (Chomsky/Joshi) class and
-documentation arm, with the per-arm total over all tasks. The regular rung is omitted:
-no example occurred in the corpus (\S\ref{sec:prelim}). \pending{cells filled from the
-completed sweep; \tbd\ marks a value to be filled.}}
+\caption{Realized extraction success (\%) by grammatical (Chomsky/Joshi) class and arm,
+over an identical 30-task set (single-run, Claude Opus 4.8). The regular rung is omitted
+(no example in the corpus, \S\ref{sec:prelim}); the single context-sensitive task, three
+GAMESS tasks, and one oversized GPAW output are excluded (see Limitations). Success rises
+only modestly with added support; the class gradient (CF vs.\ mildly-CS) is the larger
+effect.}
 \label{tab:main}
 \end{table}
 
@@ -275,38 +303,58 @@ completed sweep; \tbd\ marks a value to be filled.}}
 Arm & wrong- & silent- & from- & unit & retry & gave- \\
     & parser & empty & scratch & error & loop & up \\
 \midrule
-\textsc{none} (no harness) & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
-\textsc{bare}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
-\textsc{docs}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
-\textsc{full}              & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
-\textsc{complexity}        & \tbd & \tbd & \tbd & \tbd & \tbd & \tbd \\
+\textsc{none} (no harness) & 0 & 0 & 12 & 1 & 0 & 14 \\
+\textsc{bare}              & 21 & 11 & 0 & 1 & 0 & 12 \\
+\textsc{docs}              & 19 & 11 & 1 & 1 & 0 & 12 \\
+\textsc{full}              & 21 & 11 & 2 & 0 & 0 & 11 \\
+\textsc{complexity}        & 2 & 1 & 1 & 0 & 0 & 11 \\
 \bottomrule
 \end{tabular}
-\caption{Failure-mode counts by arm (full sweep). Modes: \emph{wrong-parser} (called a
-parser that cannot handle the format), \emph{silent-empty} (emitted output despite an
-empty parse), \emph{from-scratch} (hand-rolled a parser instead of using a tool),
-\emph{unit-error} (right value, wrong unit), \emph{retry-loop} ($\geq 3$ identical
-calls), \emph{gave-up} (missing core fields). \pending{cells from the completed sweep.}}
+\caption{Failure-mode counts by arm over the same 30-task set. Modes: \emph{wrong-parser}
+(called a parser that cannot handle the format), \emph{silent-empty} (emitted output
+despite an empty parse), \emph{from-scratch} (hand-rolled a parser instead of using a
+tool), \emph{unit-error} (right value, wrong unit), \emph{retry-loop} ($\geq 3$ identical
+calls), \emph{gave-up} (missing core fields). Exposing tools introduces wrong-parser and
+silent-empty failures; only \textsc{complexity} removes them, while gave-up stays flat.}
 \label{tab:fail}
 \end{table}
 
 \section{Discussion and outlook}
 
-The harness does not add expressive power: the agent could synthesize the missing
-parser itself (writing code is Turing-complete). Instead it lowers the \emph{cost} of
-realizing that competence---supplying tested grammars, flagging emptiness, and telling
-the agent when to escalate---so the offloadable (interface) failures shrink while the
-irreducible (reasoning) failures remain. \pending{quantified from the sweep.} The
-natural follow-up extends the target axis toward Turing-complete processing chains
-(most real pipelines are Turing-complete end to end); parsing is the tractable first
+Read cautiously, the sweep points to a distinction between \emph{access} and
+\emph{knowledge}. The agent already has the competence to parse from scratch
+(\textsc{none} succeeds on just over half the tasks); handing it tested parsers adds
+little success and, without guidance, produces confident wrong-parser and silent-empty
+errors---the failure mode most dangerous in a scientific pipeline, since a hollow result
+carries no error. What appeared to help was not documentation of what each tool supports
+but an explicit statement of the source's complexity and each tool's power ceiling: with
+it, the interface failures nearly vanished at no extra effort, while the reasoning
+failures (giving up on the core fields) held constant across every arm. If this holds up,
+the harness's contribution is less to grant capability than to supply, cheaply, the
+knowledge of when a tool suffices and when to escalate.
+
+We stress that these are first observations. Several directions would test and extend
+them: repeated runs and additional models to establish significance and model-dependence;
+a larger, better-balanced corpus that can populate the context-sensitive rung we here had
+to hold out; and extending the target axis toward Turing-complete processing chains (most
+real pipelines are Turing-complete end to end), of which parsing is the tractable first
 step.
 
 \section*{Limitations}
 
-Preliminary results are a single database snapshot (52 entries, 16 codes); success is
-field presence, not correctness against ground truth; parsers run with defaults; the
-grammatical-class assignment is a documented ordinal partly confounded with program at
-small $N$; and the main agent-sweep results are \pending{in progress}.
+This is a first, small study and its numbers are indicative, not conclusive. The agent
+sweep uses a single model (Claude Opus 4.8), a single target schema, and one run per
+cell, so we make no significance claims and cannot separate model-specific behaviour from
+general effects. The corpus is one database snapshot (52 entries, 16 codes) skewed toward
+the mildly-context-sensitive band; the context-sensitive rung is represented by a single
+task and is therefore excluded from the results tables, pending a larger corpus that can
+test whether it behaves like the other rungs. Correctness is scored against a
+union-of-parsers reference rather than an independent ground truth; the failure-mode
+labels come from conservative heuristic detectors; the grammatical-class assignment is a
+documented ordinal partly confounded with program at small $N$; and three GAMESS tasks
+(whose parsed model exceeds the agent runtime's message-size limit) and one $\sim$3.5\,GB
+GPAW output (which hangs the run) are excluded as infrastructure constraints rather than
+parsing outcomes.
 
 {\small
 \bibliographystyle{plainnat}
@@ -317,6 +365,7 @@ small $N$; and the main agent-sweep results are \pending{in progress}.
 \section{Supplementary material}
 
 \pending{full per-run agent results, the target-complexity cut, chain-of-thought
-transcripts, and the per-parser reliability and by-class recovery breakdowns.}
+transcripts, and the per-parser reliability and by-class recovery breakdowns. GAMESS
+tasks are excluded (see Limitations).}
 
 \end{document}

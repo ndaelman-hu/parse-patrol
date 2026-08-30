@@ -38,6 +38,11 @@ PARSE_PATROL_TOOLS = [
 ]
 BUILTIN_TOOLS = ["Bash", "Read", "Write"]
 
+# Programs whose parsed model overflows the agent SDK message buffer; excluded from the study.
+EXCLUDE_PROGRAMS = {"GAMESS"}
+# Individual tasks excluded for infrastructure reasons (a ~3.5GB output that hangs the run).
+EXCLUDE_TASKS = {"GPAW__kBTQasoI"}
+
 MCP_SERVERS = {
     "parse_patrol": {
         "type": "stdio",
@@ -115,6 +120,7 @@ async def run_one(task: Dict[str, Any], arm: str, rep: int, model: str,
         model=model,
         max_turns=max_turns,
         max_budget_usd=max_budget_usd,  # per-run spend safety cap
+        max_buffer_size=64 * 1024 * 1024,  # raise the 1MB default: large parser models overflow it
         setting_sources=[],             # ignore project CLAUDE.md/settings for reproducibility
         cwd=os.getcwd(),
     )
@@ -163,8 +169,13 @@ async def _main_async(args) -> None:
     total = len(tasks) * len(arms) * args.repeats
     done = 0
     for task in tasks:
+        if task["program"] in EXCLUDE_PROGRAMS or task["task_id"] in EXCLUDE_TASKS:
+            continue
         for arm in arms:
             for rep in range(args.repeats):
+                record_path = os.path.join(args.runs_dir, f"{task['task_id']}__{arm}__{rep}.json")
+                if os.path.exists(record_path):
+                    continue  # resume: skip cells already recorded, re-run only the missing/failed
                 done += 1
                 print(f"[{done}/{total}] {task['task_id']} arm={arm} rep={rep}", flush=True)
                 try:
