@@ -299,9 +299,9 @@ Arm & ($n{=}4$) & ($n{=}26$) & ($n{=}30$) \\
 \caption{Realized extraction success (\%) by grammatical (Chomsky/Joshi) class and arm,
 over an identical 30-task set (single-run, Claude Opus 4.8). The regular rung is omitted
 (no example in the corpus, \S\ref{sec:prelim}); the single context-sensitive task, three
-GAMESS tasks, and one oversized GPAW output are excluded (see Limitations). Success rises
-only modestly with added support; the class gradient (CF vs.\ mildly-CS) is the larger
-effect.}
+GAMESS tasks, and one oversized GPAW output are excluded (the last two for runtime
+reasons; Appendix~\ref{app:setup}). Success rises only modestly with added support; the
+class gradient (CF vs.\ mildly-CS) is the larger effect.}
 \label{tab:main}
 \end{table}
 
@@ -330,70 +330,69 @@ silent-empty failures; only \textsc{complexity} removes them, while gave-up stay
 
 \section{Discussion and outlook}
 
-Read cautiously, the sweep points to a distinction between \emph{access} and
-\emph{knowledge}. The agent already has the competence to parse from scratch
-(\textsc{none} succeeds on just over half the tasks); handing it tested parsers adds
-little success and, without guidance, produces confident wrong-parser and silent-empty
-errors---the failure mode most dangerous in a scientific pipeline, since a hollow result
-carries no error. What appeared to help was not documentation of what each tool supports
-but an explicit statement of the source's complexity and each tool's power ceiling: with
-it, the interface failures nearly vanished at no extra effort, while the reasoning
-failures (giving up on the core fields) held constant across every arm. If this holds up,
-the harness's contribution is less to grant capability than to supply, cheaply, the
-knowledge of when a tool suffices and when to escalate.
+At the tool level, these first sweeps read as feedback on the harness rather than the
+agent. The wrapped community parsers are not usable out of the box, and the information
+needed to match a file to the right parser is not reliably available: an agent that lacks
+it---whether guessing without documentation or trusting a capability map that overstates
+coverage---calls parsers that return nothing. This is a matching failure on the tooling
+side, not a mistake by the agent. Nor is the resulting emptiness caught downstream: the
+Pydantic output contract, as currently written, is permissive enough that a hollow parse
+still validates as a well-formed object, so the failure stays silent. Stricter constraints
+(required fields, non-empty collections, cross-field consistency) would reject these cases
+at the tool boundary, so this much is an implementation gap rather than a fundamental one.
+What no schema can verify is that a non-empty, internally consistent result carries the
+\emph{correct} values---semantic correctness against the source needs re-derivation or
+provenance, not type-checking. Both points are concrete notes for harness implementers and
+parser maintainers.
 
-The most substantive extension is coverage of the hierarchy. A larger corpus could
-populate the two extremes we could not reach here: the regular rung, and---more
-interesting---the context-sensitive rung, which for scientific output means
-\emph{multi-file} parsing, where a quantity defined in one file is referenced in another.
-The Turing-complete extreme (recursively
-enumerable) corresponds to parsing that requires arbitrary computation, i.e.\ code
-analysis; that regime is already heavily studied in the broader literature and is not
-specific to scientific data, so we treat it as a known bound rather than an immediate
-target.
+The more interesting signal runs the other way. What most improved the agent's behaviour
+was not more tooling but \emph{knowledge}: a short statement of where the source sits in
+the language hierarchy, and where each tool's power ends, collapsed the interface failures
+at no extra cost. That so lightweight a description of formal complexity changes how an
+agent parses is the thread worth pulling---why this particular context helps, and how the
+agent folds it into its reasoning, is best read from the chain-of-thought, and, with
+extending coverage to the multi-file (context-sensitive) case, is what we intend to develop
+as this work matures. The Turing-complete extreme, by contrast, amounts to code analysis
+and is already well studied elsewhere---a known bound rather than a target for this line.
 
 \section*{Limitations}
 
 This is a first, small study and its numbers are indicative, not conclusive. The agent
 sweep uses a single model (Claude Opus 4.8), a single target schema, and one run per
 cell, so we make no significance claims and cannot separate model-specific behaviour from
-general effects. The corpus is one database snapshot (52 entries, 16 codes) skewed toward
-the mildly-context-sensitive band. Correctness is scored against a
-union-of-parsers reference rather than an independent ground truth; the failure-mode
-labels come from conservative heuristic detectors; the grammatical-class assignment is a
-documented ordinal partly confounded with program at small $N$; and three GAMESS tasks
-(whose parsed model exceeds the agent runtime's message-size limit) and one $\sim$3.5\,GB
-GPAW output (which hangs the run) are excluded as infrastructure constraints rather than
-parsing outcomes.
+general effects. The corpus is a single database snapshot (52 entries, 16 codes) heavily
+skewed toward the mildly-context-sensitive band. Further methodological caveats---the
+union-of-parsers reference in place of independent ground truth, the heuristic failure
+detectors, and the infrastructure exclusions---are detailed in the appendix.
 
 {\small
 \bibliographystyle{plainnat}
 \bibliography{refs}
 }
 
+\clearpage
 \appendix
 \newcommand{\cmark}{\checkmark}
 \newcommand{\xmark}{--}
 
-\section{Experimental detail}
+\section{Experimental detail}\label{app:setup}
 
 Each run gives one coding agent (Claude Opus 4.8, via the Claude Agent SDK) a single
 source file, the fixed target schema, and code execution, capped at 30 turns and a
-per-run budget. The arms differ only in the system-prompt support: \textsc{none}
-withholds the parser tools entirely (the agent must write its own parser); \textsc{bare}
-exposes the parser tools with no guidance; \textsc{docs} adds each parser's format
-documentation; \textsc{full} adds a cross-parser capability map; \textsc{complexity} adds,
-for the specific source, its grammatical class and each tool's parsing-power ceiling with
-an escalation rule (``if no tool's power matches the format, write your own parser rather
-than call tools that return empty''). Success is field-level agreement with a reference
-built from the union of all succeeding parsers on that file. Failure-mode labels come from
-conservative, transcript-grounded detectors and are counts of runs \emph{exhibiting} each
-mode (a successful run may still have exhibited, e.g., a wrong-parser call en route).
+per-run spend budget; only the arm's system-prompt support varies, as described in the
+Method. Success is field-level agreement with a reference built from the union of all
+succeeding parsers on that file rather than an independent ground truth, and the
+failure-mode labels come from conservative, transcript-grounded detectors; both are
+therefore approximate, and a run is counted toward a mode when it \emph{exhibits} that
+mode (a successful run may still have made, e.g., a wrong-parser call en route). The
+grammatical-class assignment is a documented ordinal, partly confounded with program at
+the small per-class sample sizes.
 
 The 16 simulation codes spanned by the corpus are ABINIT, CASTEP, CP2K, Crystal,
 exciting, FHI-aims, GAMESS, Gaussian, GPAW, LAMMPS, NWChem, Octopus, ONETEP, ORCA, VASP,
-and WIEN2k. Of these, GAMESS and one oversized GPAW output are excluded from the agent
-sweep for the infrastructure reasons noted in the Limitations.
+and WIEN2k. Three GAMESS tasks, whose parsed model exceeds the agent runtime's
+message-size limit, and one $\sim$3.5\,GB GPAW output, which hangs the run, are excluded
+from the agent sweep---infrastructure constraints, not parsing outcomes.
 
 \section{Per-task outcomes}
 
