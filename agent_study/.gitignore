@@ -1,7 +1,6 @@
 # runs/ is now tracked by DVC (see agent_study/runs.dvc)
 *.output.json
-metrics.csv
-failure_modes.csv
+# metrics.csv, failure_modes.csv: small derived scores, kept in git for reproducibility
 report.md
 *.log
 *.out
