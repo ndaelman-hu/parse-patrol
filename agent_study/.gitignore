@@ -1,4 +1,4 @@
-runs/
+# runs/ is now tracked by DVC (see agent_study/runs.dvc)
 *.output.json
 metrics.csv
 failure_modes.csv
@@ -6,3 +6,4 @@ report.md
 *.log
 *.out
 __pycache__/
+/runs
