@@ -4,4 +4,5 @@ metrics.csv
 failure_modes.csv
 report.md
 *.log
+*.out
 __pycache__/
