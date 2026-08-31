@@ -2,7 +2,7 @@
 .pipelines/data
 .pipelines/resources
 .pipelines/scripts
-tests/.data
+# tests/.data is now tracked by DVC (see tests/.data.dvc)
 
 # VS Code
 .vscode/
