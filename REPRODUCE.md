@@ -61,3 +61,52 @@ cd paper/neurips_submission && uv run python make_fig.py   # writes fig_failurem
 - **Exact bytes at the 13:59 AOE deadline:** commit `952dac5` (tag `as-submitted-raw`, if created),
   and `paper/neurips_submission/ParsePatrol_AgenticFailureModes.pdf`.
 - Follow-up experiment plan: `paper/RESEARCH_PLAN.md`.
+
+## Working with DVC
+
+DVC keeps heavy data out of git: **git tracks tiny `*.dvc` pointer files, the bytes live on
+a private SSH remote** (the `hetzner-llm` box, `/mnt/data/dvc-store`). It complements git —
+one `git checkout` + `dvc checkout` moves code *and* data to the same past state together.
+
+**One-time setup on a fresh clone.** The committed `.dvc/config` points at the remote via an
+SSH-config alias (`ssh://hetzner-llm/...`) — **no host/user/key is stored in the repo**.
+Define a matching `Host hetzner-llm` in your `~/.ssh/config` (HostName, User, IdentityFile —
+details from the maintainer), then:
+
+```bash
+uv sync            # installs dvc[ssh]
+uv run dvc pull    # fetch all tracked data (connection resolved from your ~/.ssh/config)
+```
+
+**Everyday commands.**
+
+```bash
+uv run dvc pull            # download data matching the current git checkout
+uv run dvc push            # upload new/changed data to the remote
+uv run dvc status          # workspace vs local cache
+uv run dvc status --cloud  # local cache vs remote (what still needs pushing)
+uv run dvc remote list     # show configured remotes
+```
+
+**Add or update tracked data** (e.g. after a new sweep writes to `agent_study/runs/`):
+
+```bash
+uv run dvc add agent_study/runs                 # re-hash -> updates agent_study/runs.dvc
+git add agent_study/runs.dvc && git commit -m "data: new runs"
+uv run dvc push                                 # upload the new bytes
+```
+
+Track a brand-new dataset the same way: `dvc add <path>`, then commit the `<path>.dvc` pointer.
+
+**Time-travel to a past data version** (the `.dvc` pointer is versioned in git):
+
+```bash
+git checkout ml4molecules-2026-submission   # any commit / tag / branch
+uv run dvc checkout                         # sync data to match that pointer
+```
+
+**Where the bytes live.** Remote `store` = `ssh://hetzner-llm/mnt/data/dvc-store` (a private
+SSH host resolved from your `~/.ssh/config`; no IP/user in the repo). It is content-addressed — objects are stored as
+`files/md5/<xx>/<hash>`, not original filenames; the readable tree is reconstructed on
+`dvc pull`. The local cache is `.dvc/cache` (hardlinked to the workspace on ext4, so no disk
+duplication). Cache type is set to `hardlink,symlink` in `.dvc/config`.

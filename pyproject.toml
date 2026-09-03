@@ -104,5 +104,5 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "dvc>=3.67.1",
+    "dvc[ssh]>=3.67.1",
 ]

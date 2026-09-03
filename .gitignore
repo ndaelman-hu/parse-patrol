@@ -4,6 +4,9 @@
 .pipelines/scripts
 # tests/.data is now tracked by DVC (see tests/.data.dvc)
 
+# DVC — never commit remote credentials / host details (also in .dvc/.gitignore)
+.dvc/config.local
+
 # VS Code
 .vscode/
 

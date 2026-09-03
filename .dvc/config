@@ -1,4 +1,7 @@
 [core]
     analytics = false
+    remote = store
 [cache]
     type = "hardlink,symlink"
+['remote "store"']
+    url = ssh://hetzner-llm/mnt/data/dvc-store
