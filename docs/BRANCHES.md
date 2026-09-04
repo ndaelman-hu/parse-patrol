@@ -16,10 +16,14 @@ to just the two active branches; everything else is either a tag or lives on ori
 | `as-submitted-raw` | Exact commit at the 13:59 AOE submission deadline (`952dac5`). |
 | `v0.0.1-beta`, `v0.0.2-beta` | Earlier tool releases. |
 
-## Archived branches (commits preserved as tags; branch refs removed)
-Stale local-only work — recover any with `git checkout -b <name> <tag>`:
-`archive/cclib`, `archive/claude-desktop`, `archive/backup-paper-submission-20251114`,
+## Archived branches
+Stale local-only work, commits preserved as **tags** (also pushed to origin) — recover
+with `git checkout -b <name> <tag>`: `archive/cclib`, `archive/claude-desktop`,
 `archive/post-merge-hotfixes`.
+
+The heavier **Nov-2025 paper-submission** backup is instead a **DVC-tracked git bundle**
+(`archive/paper-submission-20251114.bundle`, ~2 MB on the Hetzner remote) — kept out of
+git refs because of its binary assets. See `archive/README.md` to restore.
 
 ## On origin only (not checked out locally)
 Kept because they hold unique unmerged work or belong to collaborators. Fetch with
